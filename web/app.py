@@ -225,10 +225,25 @@ def get_metrics() -> dict:
 # ---------------------------------------------------------------------------
 
 def create_app():
-    from fastapi import FastAPI, HTTPException
-    from fastapi.responses import FileResponse
+    from fastapi import FastAPI, HTTPException, Request
+    from fastapi.responses import FileResponse, JSONResponse
 
     app = FastAPI(title="SkillTrove 看板", version=APP_VERSION)
+
+    # DNS rebinding 防护（对照 Vite GHSA-vg6x-rcgg-rjx6 / webpack-dev-server #887）：
+    # 无鉴权的本地服务若不校验 Host，恶意网站可把域名解析到 127.0.0.1 绕过同源策略直驱写端点。
+    allowed_hosts_env = [h.strip().lower() for h in os.environ.get("SKILLTROVE_ALLOWED_HOSTS", "").split(";") if h.strip()]
+    allowed_hosts = {"127.0.0.1", "localhost", "::1", "testserver", *allowed_hosts_env}
+
+    @app.middleware("http")
+    async def host_guard(request: Request, call_next):
+        host = (request.headers.get("host") or "").rsplit(":", 1)[0].strip("[]").lower()
+        if host and host not in allowed_hosts:
+            return JSONResponse({"detail": "Host 不在允许列表（DNS rebinding 防护；"
+                                           "如需远程访问请设 SKILLTROVE_ALLOWED_HOSTS）"}, status_code=403)
+        response = await call_next(request)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        return response
 
     @app.get("/api/registry")
     def api_registry():

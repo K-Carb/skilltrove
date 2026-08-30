@@ -25,7 +25,8 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 class WebApiTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.client = TestClient(create_app())
+        # Host 固定为 127.0.0.1（Host 允许列表内的合法来源）
+        cls.client = TestClient(create_app(), base_url="http://127.0.0.1")
 
     # ---------- 读端点（自带演示数据） ----------
 
@@ -134,3 +135,28 @@ class WebApiTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class HostGuardTests(unittest.TestCase):
+    """DNS rebinding 防护（OWASP A05，对照 Vite GHSA-vg6x-rcgg-rjx6）。"""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.client = TestClient(create_app(), base_url="http://127.0.0.1")
+
+    def test_localhost_host_allowed(self):
+        r = self.client.get("/api/health", headers={"Host": "localhost:8000"})
+        self.assertEqual(r.status_code, 200)
+
+    def test_foreign_host_rejected(self):
+        r = self.client.get("/api/health", headers={"Host": "evil.example"})
+        self.assertEqual(r.status_code, 403)
+
+    def test_foreign_host_with_port_rejected(self):
+        r = self.client.get("/api/registry", headers={"Host": "evil.example:8000"})
+        self.assertEqual(r.status_code, 403)
+
+    def test_nosniff_header_present(self):
+        r = self.client.get("/api/health")
+        self.assertEqual(r.headers.get("x-content-type-options"), "nosniff")
+

@@ -46,7 +46,15 @@
     （run 只做编排与报告）；顺带修 2 个真 bug——重构暴露的汇总打印丢失、
     verify.py stdout 接管道时 GBK 编码崩溃（补 reconfigure utf-8）
        挑 3 处最值得的重构并实施（保持测试绿）
-- [ ] 5. OWASP Top 10:2021 逐项 —— 对照 Web 看板（注入/A03 注入面/CORS/错误信息泄露/日志注入）
+- [x] 5. OWASP Top 10:2021 逐项 —— 对照 Web 看板（注入/A03 注入面/CORS/错误信息泄露/日志注入）
+  - 提炼的可核查标准（2026-08-31 轮 5，参考 owasp.org/Top10/2021 与 Vite GHSA-vg6x-rcgg-rjx6）：
+    a) A01 访问控制：写端点无鉴权属设计，但必须有边界防线（绑定回环 + Host 校验防 DNS rebinding）
+    b) A03 注入：子进程列表参数、路径穿越写前校验、DOM 全 textContent
+    c) A05 配置：默认绑定 127.0.0.1、debug 关、安全响应头（nosniff）
+    d) A09 日志：日志含用户输入时不可被控制字符污染；敏感日志已 gitignore
+  - 本轮审计：b/c/d 大体达标；抓到 a 的真缺口——无 Host 校验（Vite/webpack 同款漏洞类），
+    新增 Host 允许列表中间件（DNS rebinding 防护，SKILLTROVE_ALLOWED_HOSTS 可扩展）
+    + nosniff 响应头 + 对应契约测试
 - [ ] 6. OWASP ASVS L1（适合本地工具的子集）—— 验证清单落地为 tests 断言或 check.py 检查项
 - [ ] 7. Google SRE Ch6 监控告警 —— 看板自身可观测性：health 已有，补日志规范与运行指标输出
 - [ ] 8. Google SRE 发布工程 —— 版本化一致性（APP_VERSION/CHANGELOG/tag 流程文档化）

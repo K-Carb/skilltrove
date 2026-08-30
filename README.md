@@ -73,6 +73,8 @@ python cli/main.py dod-verify          # 端到端验收
 
 - 全本地运行，工作记录不出本机；共享技能库以 git 为事实源，团队成员各自同步。
 - 看板无鉴权，**默认只绑定 127.0.0.1**——请勿把端口暴露到公网；跨站表单请求会被 JSON 请求体校验挡下。
+- 内置 DNS rebinding 防护（Host 允许列表，对照 Vite GHSA-vg6x-rcgg-rjx6 同类漏洞）：仅接受
+  127.0.0.1 / localhost / ::1；确需远程访问时用 `SKILLTROVE_ALLOWED_HOSTS`（分号分隔）显式加白，并自行补反代鉴权。
 - LLM 调用日志（`data/llm-log.jsonl`，已 gitignore）包含提示词内容，属于本机敏感数据，勿入库、勿外传。
 - 仓库内所有数据（`archive/`、`data/`、`skills/`、`examples/`）均为虚构的演示数据（TeamWiki 团队），可随时清空后接入自己的记录。
 

@@ -57,3 +57,14 @@
 - 经验记录：bash heredoc 中 `
 ` 经多层转义会变成真实换行——跨语言生成代码一律用 Edit 工具或行号手术
 - 下一步：轮 5 取条目 5（OWASP Top 10 逐项对照 Web 看板）
+
+
+## 2026-08-31 04:45 轮 5（读书对照：OWASP Top 10:2021 逐项）
+
+- 审计：A03 注入（子进程列表参数/路径穿越写前校验/DOM 全 textContent）、A05 配置（默认回环绑定）、
+  A09 日志治理大体达标；抓到 A01/A05 真缺口——无 Host 校验，与 Vite GHSA-vg6x-rcgg-rjx6、
+  webpack-dev-server #887 同类：DNS rebinding 可让恶意网站直达 127.0.0.1 的无鉴权写端点
+- 改动：新增 Host 允许列表中间件（默认 127.0.0.1/localhost/::1，SKILLTROVE_ALLOWED_HOSTS 可扩展，
+  非法 Host 403）+ nosniff 响应头；README 安全节补充；HostGuardTests 4 项契约测试
+- 验证：ruff 0 违规 / 207 单测 OK / DoD 5/5 / 前端 PASS
+- 下一步：轮 6 取条目 6（OWASP ASVS L1 子集落地为自动化检查项）
