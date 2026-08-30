@@ -12,3 +12,12 @@
   ADR-0001~0003（无构建前端 / git 事实源 / 可插拔 LLM）、README 安全声明与徽章占位
 - 验证：195 项单测 OK、ruff 0 违规、DoD 5/5、前端验证 PASS
 - 待办：夜间读书计划见 docs/study/reading-plan.md；CI 徽章 URL 中 USER 占位待新账号名
+
+
+## 2026-08-31 00:40 轮 1（读书对照：Clean Code Ch2/3/4 命名/函数/注释）
+
+- 审计：AST 扫描 17 个超 60 行函数；发现 esc() 名不副实；llm.call() 97 行四后端 if/elif
+- 改动：llm.call() 拆为 _call_{claude,codex,kimi,openai_compatible} + _BACKENDS 查找表调度（行为不变）；
+  删除 app.js 的 esc()，调用点改为直白的 `line ?? ""`
+- 验证：ruff 0 违规 / 195 单测 OK / DoD 5/5 / 前端 PASS
+- 下一步：轮 2 取条目 2（Clean Code Ch7/8 错误处理与边界）

@@ -61,8 +61,6 @@ function el(tag, cls, text) {
   return e;
 }
 
-function esc(s) { return String(s == null ? "" : s); }
-
 /* 状态提示条：可带一个操作按钮（如"撤销"），代替打断式 confirm 弹窗 */
 function showToast(msg, kind, actionLabel, actionFn) {
   const box = document.getElementById("toast");
@@ -992,7 +990,7 @@ async function pollRun(runId) {
     // 日志增量追加：钉底跟随；用户上滚时显示"新日志 N 条"胶囊（不打断）
     if (pipelineState.logBox && logs.lines.length) {
       for (const line of logs.lines) {
-        pipelineState.logBox.appendChild(el("div", null, esc(line)));
+        pipelineState.logBox.appendChild(el("div", null, line ?? ""));
       }
       pipelineState.cursor = logs.next;
       if (!pipelineState.userUp) {

@@ -34,6 +34,94 @@ def _log(entry: dict) -> None:
         pass  # 日志失败不阻塞调用
 
 
+def _call_claude(prompt: str, system: str, timeout: int) -> str:
+    """claude CLI：prompt 走 stdin（Windows 下 claude.cmd shim 会截断长 argv 参数）。"""
+    cli = _find("claude")
+    if not cli:
+        raise RuntimeError("claude CLI 不在 PATH")
+    cmd = [cli, "-p", "--output-format", "text"]
+    # LLM_MODEL 选择模型（本机 claude 的别名/模型名，如 haiku/sonnet/opus）
+    model = os.environ.get("LLM_MODEL", "")
+    if model:
+        cmd += ["--model", model]
+    if system:
+        cmd += ["--system-prompt", system]
+    r = subprocess.run(cmd, input=prompt, capture_output=True, text=True,
+                       timeout=timeout, encoding="utf-8", errors="replace")
+    if r.returncode != 0:
+        raise RuntimeError(f"claude 退出码 {r.returncode}: {r.stderr[:300]}")
+    return r.stdout.strip()
+
+
+def _call_codex(prompt: str, system: str, timeout: int) -> str:
+    """codex CLI：exec "-" 从 stdin 读 prompt（规避 argv 截断）。
+
+    codex 0.147 无 --system-prompt 参数（实测报 unexpected argument），
+    system 文本并入 prompt 头部（功能等价，仅丢失 system 角色标记）。
+    """
+    cli = _find("codex")
+    if not cli:
+        raise RuntimeError("codex CLI 不在 PATH")
+    cmd = [cli, "exec", "-", "--json"]
+    payload = (system + "\n\n" + prompt) if system else prompt
+    r = subprocess.run(cmd, input=payload, capture_output=True, text=True,
+                       timeout=timeout, encoding="utf-8", errors="replace")
+    if r.returncode != 0:
+        raise RuntimeError(f"codex 退出码 {r.returncode}: {r.stderr[:300]}")
+    return _extract_codex_text(r.stdout)
+
+
+def _call_kimi(prompt: str, system: str, timeout: int) -> str:
+    """kimi CLI：-p 以参数传 prompt（非 stdin，实测 'argument missing'）；无 system 参数。"""
+    cli = _find("kimi")
+    if not cli:
+        raise RuntimeError("kimi CLI 不在 PATH")
+    payload = (system + "\n\n" + prompt) if system else prompt
+    cmd = [cli, "-p", payload]
+    r = subprocess.run(cmd, capture_output=True, text=True,
+                       timeout=timeout, encoding="utf-8", errors="replace")
+    if r.returncode != 0:
+        raise RuntimeError(f"kimi 退出码 {r.returncode}: {r.stderr[:300]}")
+    return r.stdout.strip()
+
+
+def _call_openai_compatible(prompt: str, system: str, timeout: int) -> str:
+    """BYO 网关/key（客户场景最通用）；标准库 urllib，无第三方依赖。"""
+    base_url = os.environ.get("LLM_BASE_URL", "http://localhost:11434/v1").rstrip("/")
+    api_key = os.environ.get("LLM_API_KEY", "")
+    model = os.environ.get("LLM_MODEL", "")
+    if not model:
+        raise RuntimeError("openai-compatible 后端需设 LLM_MODEL（如 qwen2.5:7b）")
+    payload = {
+        "model": model,
+        "messages": [
+            {"role": "system", "content": system or "You are a helpful assistant."},
+            {"role": "user", "content": prompt},
+        ],
+    }
+    req = urllib.request.Request(
+        base_url + "/chat/completions",
+        data=json.dumps(payload).encode("utf-8"),
+        headers={"Content-Type": "application/json",
+                 **({"Authorization": f"Bearer {api_key}"} if api_key else {})},
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            body = json.loads(resp.read().decode("utf-8"))
+    except urllib.error.HTTPError as e:
+        raise RuntimeError(f"openai-compatible HTTP {e.code}: {e.read()[:200]}")
+    return (body.get("choices") or [{}])[0].get("message", {}).get("content", "").strip()
+
+
+_BACKENDS = {
+    "claude": _call_claude,
+    "codex": _call_codex,
+    "kimi": _call_kimi,
+    "openai-compatible": _call_openai_compatible,
+}
+
+
 def call(prompt: str, system: str = "", backend: str | None = None,
          timeout: int = 600) -> dict:
     """调用 LLM，返回 {"ok": bool, "text": str, "backend": str, "error": str|None}。"""
@@ -46,80 +134,10 @@ def call(prompt: str, system: str = "", backend: str | None = None,
         "text_preview": None, "duration_s": None,
     }
     try:
-        if backend == "claude":
-            cli = _find("claude")
-            if not cli:
-                raise RuntimeError("claude CLI 不在 PATH")
-            # prompt 走 stdin：Windows 下 claude.cmd shim 会截断长 argv 参数
-            cmd = [cli, "-p", "--output-format", "text"]
-            # LLM_MODEL 选择模型（本机 claude 的别名/模型名，如 haiku/sonnet/opus）
-            model = os.environ.get("LLM_MODEL", "")
-            if model:
-                cmd += ["--model", model]
-            if system:
-                cmd += ["--system-prompt", system]
-            r = subprocess.run(cmd, input=prompt, capture_output=True, text=True,
-                               timeout=timeout, encoding="utf-8", errors="replace")
-            if r.returncode != 0:
-                raise RuntimeError(f"claude 退出码 {r.returncode}: {r.stderr[:300]}")
-            text = r.stdout.strip()
-        elif backend == "codex":
-            cli = _find("codex")
-            if not cli:
-                raise RuntimeError("codex CLI 不在 PATH")
-            # codex exec 支持 "-" 从 stdin 读 prompt（同样规避 argv 截断）；
-            # codex 0.147 无 --system-prompt 参数（实测报 unexpected argument），
-            # system 文本并入 prompt 头部（功能等价，仅丢失 system 角色标记）
-            cmd = [cli, "exec", "-", "--json"]
-            payload = (system + "\n\n" + prompt) if system else prompt
-            r = subprocess.run(cmd, input=payload, capture_output=True, text=True,
-                               timeout=timeout, encoding="utf-8", errors="replace")
-            if r.returncode != 0:
-                raise RuntimeError(f"codex 退出码 {r.returncode}: {r.stderr[:300]}")
-            text = _extract_codex_text(r.stdout)
-        elif backend == "kimi":
-            cli = _find("kimi")
-            if not cli:
-                raise RuntimeError("kimi CLI 不在 PATH")
-            # kimi -p 以参数传 prompt（非 stdin，实测 'argument missing'）；无 system 参数，
-            # system 文本并入 prompt 头部
-            payload = (system + "\n\n" + prompt) if system else prompt
-            cmd = [cli, "-p", payload]
-            r = subprocess.run(cmd, capture_output=True, text=True,
-                               timeout=timeout, encoding="utf-8", errors="replace")
-            if r.returncode != 0:
-                raise RuntimeError(f"kimi 退出码 {r.returncode}: {r.stderr[:300]}")
-            text = r.stdout.strip()
-        elif backend == "openai-compatible":
-            # BYO 网关/key（客户场景最通用）；标准库 urllib，无第三方依赖
-            base_url = os.environ.get("LLM_BASE_URL", "http://localhost:11434/v1").rstrip("/")
-            api_key = os.environ.get("LLM_API_KEY", "")
-            model = os.environ.get("LLM_MODEL", "")
-            if not model:
-                raise RuntimeError("openai-compatible 后端需设 LLM_MODEL（如 qwen2.5:7b）")
-            payload = {
-                "model": model,
-                "messages": [
-                    {"role": "system", "content": system or "You are a helpful assistant."},
-                    {"role": "user", "content": prompt},
-                ],
-            }
-            req = urllib.request.Request(
-                base_url + "/chat/completions",
-                data=json.dumps(payload).encode("utf-8"),
-                headers={"Content-Type": "application/json",
-                         **({"Authorization": f"Bearer {api_key}"} if api_key else {})},
-                method="POST",
-            )
-            try:
-                with urllib.request.urlopen(req, timeout=timeout) as resp:
-                    body = json.loads(resp.read().decode("utf-8"))
-            except urllib.error.HTTPError as e:
-                raise RuntimeError(f"openai-compatible HTTP {e.code}: {e.read()[:200]}")
-            text = (body.get("choices") or [{}])[0].get("message", {}).get("content", "").strip()
-        else:
+        fn = _BACKENDS.get(backend)
+        if fn is None:
             raise RuntimeError(f"未知后端: {backend}")
-
+        text = fn(prompt, system, timeout)
         if not text:
             raise RuntimeError("LLM 返回空输出")
         entry["ok"] = True
