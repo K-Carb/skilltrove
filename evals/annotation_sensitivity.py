@@ -163,7 +163,7 @@ def main() -> int:
     kw_ari = {lname: v["variants"]["baseline_keyword_only"]["ari"] for lname, v in per_labeling.items()}
 
     summary = {
-        "headline_base": f"基准标注下 full 管线 ARI/AMI=1.000、F1=1.000；关键词 baseline F1=0.667",
+        "headline_base": "基准标注下 full 管线 ARI/AMI=1.000、F1=1.000；关键词 baseline F1=0.667",
         "full_pipeline_ari_range": [min(full_ari.values()), max(full_ari.values())],
         "full_pipeline_f1_range": [min(full_f1.values()), max(full_f1.values())],
         "keyword_baseline_ari_range": [min(kw_ari.values()), max(kw_ari.values())],

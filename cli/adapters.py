@@ -59,7 +59,7 @@ def parse_comments_md(md_text: str) -> list[dict]:
 
 def parse_description_md(md_text: str) -> str:
     """描述文件去 # 标题行后的正文（作为 goal/acceptance 语料）。"""
-    body = "\n".join(l for l in md_text.strip().splitlines() if not l.strip().startswith("#"))
+    body = "\n".join(ln for ln in md_text.strip().splitlines() if not ln.strip().startswith("#"))
     return body.strip()
 
 

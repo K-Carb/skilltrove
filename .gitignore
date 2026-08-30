@@ -16,3 +16,4 @@ Desktop.ini
 
 # 运行时验收报告（demo.py --quick 生成）
 docs/dod-report.json
+.scratch/

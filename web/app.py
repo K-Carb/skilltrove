@@ -29,6 +29,8 @@ from fastapi.staticfiles import StaticFiles  # noqa: E402
 
 STATIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
 
+APP_VERSION = "0.1.0"
+
 
 class NoCacheStaticFiles(StaticFiles):
     """静态资源禁止缓存（no-cache/no-store）：前端迭代快，浏览器缓存旧 JS 会
@@ -223,11 +225,10 @@ def get_metrics() -> dict:
 # ---------------------------------------------------------------------------
 
 def create_app():
-    from fastapi import FastAPI, HTTPException, Request
-    from fastapi.responses import FileResponse, JSONResponse
-    from fastapi.staticfiles import StaticFiles
+    from fastapi import FastAPI, HTTPException
+    from fastapi.responses import FileResponse
 
-    app = FastAPI(title="SkillTrove 看板", version="0.1.0")
+    app = FastAPI(title="SkillTrove 看板", version=APP_VERSION)
 
     @app.get("/api/registry")
     def api_registry():
@@ -356,6 +357,11 @@ def create_app():
             "sources_dirs": pipeline.SOURCES_DIRS,
             "llm_default": __import__("os").environ.get("LLM_BACKEND", "kimi"),
         }
+
+    @app.get("/api/health")
+    def api_health():
+        """存活探针：进程在 + 版本号（供脚本/监控探测）。"""
+        return {"ok": True, "service": "skilltrove", "version": APP_VERSION}
 
     @app.get("/")
     def index():

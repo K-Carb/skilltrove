@@ -260,7 +260,6 @@ class TestGitRepoAdapter(unittest.TestCase):
 
     def test_max_commits_limit(self):
         # 大仓库历史窗口上限：SKILLTROVE_GIT_MAX_COMMITS 生效（O(n²) 向量层需要）
-        import json
         with tempfile.TemporaryDirectory() as tmp:
             repo = self._make_repo(tmp)  # 2 commits
             a = adapters.GitRepoAdapter()

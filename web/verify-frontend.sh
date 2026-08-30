@@ -8,14 +8,15 @@ PY=".venv/Scripts/python.exe"
 EDGE="/c/Program Files (x86)/Microsoft/Edge/Application/msedge.exe"
 [ -x "$PY" ] || PY="python"
 PORT=12761
-OUT=$(mktemp -d)
+SCRATCH="$PWD/.scratch"; mkdir -p "$SCRATCH"
+OUT=$(mktemp -d "$SCRATCH/verify-XXXXXX")
 VIEWS="overview skills inbox pipeline candidates metrics recalls"
 
 echo "=== 起服务 (127.0.0.1:$PORT) ==="
 SKILLTROVE_WEB_PORT=$PORT "$PY" web/app.py > /tmp/cg-verify.log 2>&1 &
 SRV=$!
 sleep 3
-trap "kill $SRV 2>/dev/null; rm -rf $OUT" EXIT
+trap "kill $SRV 2>/dev/null; rm -rf "$OUT"" EXIT
 
 curl -s -o /dev/null -w "GET / -> %{http_code}\n" "http://127.0.0.1:$PORT/"
 

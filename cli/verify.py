@@ -74,7 +74,7 @@ def check_cli_steps() -> tuple[bool, list[str], list[str]]:
 def run(args) -> int:
     root = args.root
     results = []
-    dod = []
+
 
     def check(name: str, ok: bool, evidence: str) -> None:
         results.append({"item": name, "pass": bool(ok), "evidence": evidence})

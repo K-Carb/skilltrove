@@ -76,7 +76,8 @@ class TestRunFromExternalCwd(unittest.TestCase):
             old = os.getcwd()
             os.chdir(foreign)
             try:
-                class A: pass
+                class A:
+                    pass
                 a = A()
                 a.root = root
                 rc = verify.run(a)

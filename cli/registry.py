@@ -372,8 +372,8 @@ def build_review_notes(name: str, entry: dict | None, fm: dict, evidence: list[s
     desc = fm.get("description") or "【待补充】"
     when_to_use = fm.get("when_to_use") or "【待补充】"
 
-    l: list[str] = []
-    ap = l.append
+    lines_out: list[str] = []
+    ap = lines_out.append
     ap(f"# 审核单：{name}")
     ap("")
     ap(f"- 生成时间：{now}（registry.py review-helper，F4.2）")
@@ -425,7 +425,7 @@ def build_review_notes(name: str, entry: dict | None, fm: dict, evidence: list[s
 
     ap("## 7. 审核结论")
     ap("- [ ] 通过（发布入库）    - [ ] 打回（补充证据 / 修改后复审）")
-    return "\n".join(l) + "\n"
+    return "\n".join(lines_out) + "\n"
 
 
 # ---------------------------------------------------------------------------
