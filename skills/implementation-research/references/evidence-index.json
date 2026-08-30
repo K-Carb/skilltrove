@@ -1,0 +1,5 @@
+{
+  "ep-2": {"issue": "WIKI-2", "topic": "分页方案调研", "artifact": "pagination-research.md"},
+  "ep-3": {"issue": "WIKI-3", "topic": "搜索选型调研", "artifact": "search-research.md"},
+  "ep-4": {"issue": "WIKI-4", "topic": "权限模型调研", "artifact": "permission-research.md"}
+}

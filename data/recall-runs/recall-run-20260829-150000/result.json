@@ -1,0 +1,17 @@
+{
+  "run_id": "recall-run-20260829-150000",
+  "skill_id": "implementation-research",
+  "version": "1.0.0",
+  "agent_id": "codex",
+  "applied": true,
+  "steps_followed": [
+    1,
+    2,
+    3
+  ],
+  "products": [
+    "products/result.md"
+  ],
+  "output_path": "agent-output.md",
+  "ts": "2026-08-29T15:02:00Z"
+}

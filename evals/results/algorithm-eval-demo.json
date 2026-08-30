@@ -1,0 +1,486 @@
+{
+  "generated_at": "2026-08-30T03:55:23Z",
+  "gold": {
+    "labeler": "demo",
+    "n_episodes": 3,
+    "n_same_pairs": 3
+  },
+  "results": {
+    "vector_only_050_mixed": {
+      "variant": "vector_only_050_mixed",
+      "clusters": [
+        [
+          "ep-2",
+          "ep-3",
+          "ep-4"
+        ]
+      ],
+      "n_clusters": 1,
+      "ari": 1.0,
+      "ami": 1.0,
+      "pair_prf": {
+        "tp": 3,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "false_positive_pairs": [],
+      "false_negative_pairs": [],
+      "edges": [
+        [
+          "ep-2",
+          "ep-3",
+          0.6311
+        ],
+        [
+          "ep-3",
+          "ep-4",
+          0.5764
+        ],
+        [
+          "ep-2",
+          "ep-4",
+          0.5564
+        ]
+      ]
+    },
+    "vector_only_040_mixed": {
+      "variant": "vector_only_040_mixed",
+      "clusters": [
+        [
+          "ep-2",
+          "ep-3",
+          "ep-4"
+        ]
+      ],
+      "n_clusters": 1,
+      "ari": 1.0,
+      "ami": 1.0,
+      "pair_prf": {
+        "tp": 3,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "false_positive_pairs": [],
+      "false_negative_pairs": [],
+      "edges": [
+        [
+          "ep-2",
+          "ep-3",
+          0.6311
+        ],
+        [
+          "ep-3",
+          "ep-4",
+          0.5764
+        ],
+        [
+          "ep-2",
+          "ep-4",
+          0.5564
+        ]
+      ]
+    },
+    "vector_only_060_mixed": {
+      "variant": "vector_only_060_mixed",
+      "clusters": [
+        [
+          "ep-2",
+          "ep-3"
+        ],
+        [
+          "ep-4"
+        ]
+      ],
+      "n_clusters": 2,
+      "ari": 0.0,
+      "ami": 0.0,
+      "pair_prf": {
+        "tp": 1,
+        "fp": 0,
+        "fn": 2,
+        "precision": 1.0,
+        "recall": 0.3333,
+        "f1": 0.5
+      },
+      "false_positive_pairs": [],
+      "false_negative_pairs": [
+        [
+          "ep-2",
+          "ep-4"
+        ],
+        [
+          "ep-3",
+          "ep-4"
+        ]
+      ],
+      "edges": [
+        [
+          "ep-2",
+          "ep-3",
+          0.6311
+        ]
+      ]
+    },
+    "vector_only_050_bigram_only": {
+      "variant": "vector_only_050_bigram_only",
+      "clusters": [
+        [
+          "ep-2",
+          "ep-3",
+          "ep-4"
+        ]
+      ],
+      "n_clusters": 1,
+      "ari": 1.0,
+      "ami": 1.0,
+      "pair_prf": {
+        "tp": 3,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "false_positive_pairs": [],
+      "false_negative_pairs": [],
+      "edges": [
+        [
+          "ep-2",
+          "ep-3",
+          0.6585
+        ],
+        [
+          "ep-3",
+          "ep-4",
+          0.6098
+        ],
+        [
+          "ep-2",
+          "ep-4",
+          0.5854
+        ]
+      ]
+    },
+    "vector_only_050_trigram_only": {
+      "variant": "vector_only_050_trigram_only",
+      "clusters": [
+        [
+          "ep-2",
+          "ep-3",
+          "ep-4"
+        ]
+      ],
+      "n_clusters": 1,
+      "ari": 1.0,
+      "ami": 1.0,
+      "pair_prf": {
+        "tp": 3,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "false_positive_pairs": [],
+      "false_negative_pairs": [],
+      "edges": [
+        [
+          "ep-2",
+          "ep-3",
+          0.5899
+        ],
+        [
+          "ep-3",
+          "ep-4",
+          0.5263
+        ],
+        [
+          "ep-2",
+          "ep-4",
+          0.513
+        ]
+      ]
+    },
+    "vector_only_050_equal": {
+      "variant": "vector_only_050_equal",
+      "clusters": [
+        [
+          "ep-2",
+          "ep-3",
+          "ep-4"
+        ]
+      ],
+      "n_clusters": 1,
+      "ari": 1.0,
+      "ami": 1.0,
+      "pair_prf": {
+        "tp": 3,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "false_positive_pairs": [],
+      "false_negative_pairs": [],
+      "edges": [
+        [
+          "ep-2",
+          "ep-3",
+          0.6242
+        ],
+        [
+          "ep-3",
+          "ep-4",
+          0.568
+        ],
+        [
+          "ep-2",
+          "ep-4",
+          0.5492
+        ]
+      ]
+    },
+    "full_pipeline_llm": {
+      "variant": "full_pipeline_llm",
+      "clusters": [
+        [
+          "ep-3",
+          "ep-4"
+        ],
+        [
+          "ep-2"
+        ]
+      ],
+      "n_clusters": 2,
+      "ari": 0.0,
+      "ami": 0.0,
+      "pair_prf": {
+        "tp": 1,
+        "fp": 0,
+        "fn": 2,
+        "precision": 1.0,
+        "recall": 0.3333,
+        "f1": 0.5
+      },
+      "false_positive_pairs": [],
+      "false_negative_pairs": [
+        [
+          "ep-2",
+          "ep-3"
+        ],
+        [
+          "ep-2",
+          "ep-4"
+        ]
+      ],
+      "edges": [
+        [
+          "ep-2",
+          "ep-3",
+          0.6311
+        ],
+        [
+          "ep-3",
+          "ep-4",
+          0.5764
+        ],
+        [
+          "ep-2",
+          "ep-4",
+          0.5564
+        ]
+      ],
+      "llm_rejected": []
+    },
+    "rule_fallback_pipeline": {
+      "variant": "rule_fallback_pipeline",
+      "clusters": [
+        [
+          "ep-2",
+          "ep-3",
+          "ep-4"
+        ]
+      ],
+      "n_clusters": 1,
+      "ari": 1.0,
+      "ami": 1.0,
+      "pair_prf": {
+        "tp": 3,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "false_positive_pairs": [],
+      "false_negative_pairs": []
+    },
+    "baseline_all_diff": {
+      "variant": "baseline_all_diff",
+      "clusters": [
+        [
+          "ep-2"
+        ],
+        [
+          "ep-3"
+        ],
+        [
+          "ep-4"
+        ]
+      ],
+      "n_clusters": 3,
+      "ari": 0.0,
+      "ami": 0.0,
+      "pair_prf": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 3,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0
+      },
+      "false_positive_pairs": [],
+      "false_negative_pairs": [
+        [
+          "ep-2",
+          "ep-3"
+        ],
+        [
+          "ep-2",
+          "ep-4"
+        ],
+        [
+          "ep-3",
+          "ep-4"
+        ]
+      ]
+    },
+    "baseline_all_same": {
+      "variant": "baseline_all_same",
+      "clusters": [
+        [
+          "ep-2",
+          "ep-3",
+          "ep-4"
+        ]
+      ],
+      "n_clusters": 1,
+      "ari": 1.0,
+      "ami": 1.0,
+      "pair_prf": {
+        "tp": 3,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "false_positive_pairs": [],
+      "false_negative_pairs": []
+    },
+    "baseline_keyword_only": {
+      "variant": "baseline_keyword_only",
+      "clusters": [
+        [
+          "ep-2",
+          "ep-3",
+          "ep-4"
+        ]
+      ],
+      "n_clusters": 1,
+      "ari": 1.0,
+      "ami": 1.0,
+      "pair_prf": {
+        "tp": 3,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "false_positive_pairs": [],
+      "false_negative_pairs": [],
+      "edges": [
+        [
+          "ep-2",
+          "ep-3"
+        ],
+        [
+          "ep-2",
+          "ep-4"
+        ],
+        [
+          "ep-3",
+          "ep-4"
+        ]
+      ]
+    },
+    "negative_samples": {
+      "note": "相似度用默认权重（bigram 0.6 + trigram 0.4）；vector >= 0.5 即纯向量会误判为同类。",
+      "pairs": [
+        {
+          "pair": [
+            "ep-1",
+            "ep-2"
+          ],
+          "sim": 0.2849,
+          "misjudged_as_same_by_vector": false
+        },
+        {
+          "pair": [
+            "ep-1",
+            "ep-3"
+          ],
+          "sim": 0.2878,
+          "misjudged_as_same_by_vector": false
+        },
+        {
+          "pair": [
+            "ep-1",
+            "ep-5"
+          ],
+          "sim": 0.3072,
+          "misjudged_as_same_by_vector": false
+        },
+        {
+          "pair": [
+            "ep-2",
+            "ep-5"
+          ],
+          "sim": 0.3078,
+          "misjudged_as_same_by_vector": false
+        },
+        {
+          "pair": [
+            "ep-3",
+            "ep-5"
+          ],
+          "sim": 0.311,
+          "misjudged_as_same_by_vector": false
+        },
+        {
+          "pair": [
+            "ep-4",
+            "ep-5"
+          ],
+          "sim": 0.311,
+          "misjudged_as_same_by_vector": false
+        }
+      ],
+      "sim_stats": {
+        "n": 6,
+        "min": 0.2849,
+        "median": 0.3078,
+        "max": 0.311,
+        "misjudged_count": 0
+      }
+    }
+  }
+}

@@ -1,0 +1,79 @@
+{
+  "generated_at": "2026-08-29T12:30:00Z",
+  "high_episodes": 3,
+  "pairs_above_threshold": 3,
+  "candidates": [
+    {
+      "candidate_id": "cand-001",
+      "kind": "procedure",
+      "episode_ids": [
+        "ep-2",
+        "ep-3",
+        "ep-4"
+      ],
+      "episodes": [
+        {
+          "episode_id": "ep-2",
+          "issue_key": "WIKI-2",
+          "goal": "动手改列表前，先调研分页的主流做法与取舍",
+          "main_agent": "bob",
+          "status": "done"
+        },
+        {
+          "episode_id": "ep-3",
+          "issue_key": "WIKI-3",
+          "goal": "给站内搜索选型前，先调研三条主流路线",
+          "main_agent": "carol",
+          "status": "done"
+        },
+        {
+          "episode_id": "ep-4",
+          "issue_key": "WIKI-4",
+          "goal": "设计团队空间权限前，调研主流权限模型",
+          "main_agent": "dave",
+          "status": "done"
+        }
+      ],
+      "contributors": {
+        "distinct_agents": 3,
+        "agents": [
+          "bob",
+          "carol",
+          "dave"
+        ]
+      },
+      "similarity": 0.68,
+      "review": {
+        "judgement": "same",
+        "target": "同类",
+        "product": "同类",
+        "input_form": "同类",
+        "acceptance": "同类",
+        "firewall_hit": "无",
+        "kind": "procedure",
+        "note": "三次任务都是动手前先调研主流做法：输入同为 issue 描述与现有代码，产物同为带对比与推荐的调研报告，验收都要求给出选型结论，属同类重复经验。"
+      },
+      "evidence": [
+        {
+          "episode": "ep-2",
+          "loc": "comment@2026-08-29T04:10:00Z",
+          "agent": "bob",
+          "preview": "完成分页方案调研：offset 与 cursor 的取舍、深分页性能、主流框架的默认做法，报告见附件，推荐 cursor 方案。"
+        },
+        {
+          "episode": "ep-3",
+          "loc": "comment@2026-08-29T05:20:00Z",
+          "agent": "carol",
+          "preview": "完成搜索选型调研：数据库 LIKE、倒排索引与外部引擎三条路线的对比，含成本与维护评估，推荐先 LIKE 后平滑升级。"
+        },
+        {
+          "episode": "ep-4",
+          "loc": "comment@2026-08-29T06:40:00Z",
+          "agent": "dave",
+          "preview": "完成权限模型调研：RBAC、ACL 与关系型授权（ReBAC）对比，附各自迁移成本，结论是先 RBAC。"
+        }
+      ],
+      "review_method": "llm:claude"
+    }
+  ]
+}

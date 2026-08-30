@@ -1,0 +1,5 @@
+{
+  "task": "给评论功能做实现方案调研",
+  "steps_followed": [1, 2, 3, 4],
+  "expected": {"candidates": 3, "comparison_table": true, "reasoned_recommendation": true}
+}

@@ -1,0 +1,40 @@
+{
+  "facts_id": "facts-demo-001",
+  "frozen_at": "2026-08-29T12:00:00Z",
+  "provider": "log-export",
+  "workspace_id": "teamwiki-demo",
+  "time_window": {
+    "from": "2026-08-29",
+    "to": "2026-08-29"
+  },
+  "depth": "issue+comments+attachments",
+  "permissions": "readonly-archive",
+  "contributors": [
+    {
+      "agent": "alice",
+      "issues": [
+        "WIKI-1",
+        "WIKI-5"
+      ]
+    },
+    {
+      "agent": "bob",
+      "issues": [
+        "WIKI-2"
+      ]
+    },
+    {
+      "agent": "carol",
+      "issues": [
+        "WIKI-3"
+      ]
+    },
+    {
+      "agent": "dave",
+      "issues": [
+        "WIKI-4"
+      ]
+    }
+  ],
+  "excluded_agents": []
+}

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<title>SkillTrove · 团队 AI 经验库</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="SkillTrove 把团队 AI 助手干活的记录变成可以重复用的技能：自动发现重复任务，审核后全团队共用。本地运行。">
+<meta name="theme-color" content="#fafaf9">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23065f46'/%3E%3Cpath d='M9 22V10h3.6l3.9 7.3L20.4 10H24v12h-3V15.5L17.6 22h-3.2L11 15.5V22z' fill='%23fff'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
+  <symbol id="i-home" viewBox="0 0 16 16"><path d="M2.5 7.5 8 2.5l5.5 5V13a1 1 0 0 1-1 1h-3v-3.5h-3V14h-3a1 1 0 0 1-1-1z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></symbol>
+  <symbol id="i-skills" viewBox="0 0 16 16"><path d="M8 3.5C6.7 2.4 4.9 2 2.5 2v10.5c2.4 0 4.2.4 5.5 1.5 1.3-1.1 3.1-1.5 5.5-1.5V2c-2.4 0-4.2.4-5.5 1.5z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M8 3.5V14" stroke="currentColor" stroke-width="1.5"/></symbol>
+  <symbol id="i-inbox" viewBox="0 0 16 16"><path d="M2 9.5 4 3h8l2 6.5V13a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M2 9.5h3.5a2.5 2.5 0 0 0 5 0H14" fill="none" stroke="currentColor" stroke-width="1.5"/></symbol>
+  <symbol id="i-run" viewBox="0 0 16 16"><path d="M5.5 3.5v9l7-4.5z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></symbol>
+</svg>
+<a class="skip-link" href="#view">跳到内容</a>
+<header>
+  <div class="brand">
+    <span class="brand-dot" aria-hidden="true"></span>
+    <h1>SkillTrove <span>团队 AI 经验库</span></h1>
+  </div>
+  <nav aria-label="主导航">
+    <button data-view="overview" class="active"><svg class="nav-ico"><use href="#i-home"/></svg>首页</button>
+    <button data-view="skills"><svg class="nav-ico"><use href="#i-skills"/></svg>技能库</button>
+    <button data-view="inbox"><svg class="nav-ico"><use href="#i-inbox"/></svg>收件箱</button>
+    <button data-view="pipeline"><svg class="nav-ico"><use href="#i-run"/></svg>运行任务</button>
+  </nav>
+</header>
+<main id="view"></main>
+<footer>
+  <span>SkillTrove 本地运行</span>
+  <span class="dot">·</span>
+  <span>数据不出本机</span>
+  <span class="dot">·</span>
+  <span>技能库通过 git 与团队共享</span>
+</footer>
+<noscript><div class="empty">看板需要 JavaScript 才能展示数据。</div></noscript>
+<div id="toast" role="status" aria-live="polite"></div>
+<script src="/static/app.js"></script>
+</body>
+</html>

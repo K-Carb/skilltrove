@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+
+# 运行产物（可变/敏感，不入库）
+web/server.log
+data/llm-log.jsonl
+
+# 系统
+Thumbs.db
+Desktop.ini
+
+# 截图工作产物（agent 验证用，不入库）
+.shots/
+
+# 运行时验收报告（demo.py --quick 生成）
+docs/dod-report.json

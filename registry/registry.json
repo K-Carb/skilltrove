@@ -1,0 +1,36 @@
+{
+  "schema": "skilltrove-registry-v1",
+  "skills": [
+    {
+      "name": "implementation-research",
+      "version": "1.0.0",
+      "owner": "team",
+      "layer": "shared",
+      "action_level": "advice",
+      "author": "SkillTrove demo",
+      "source_runs": [
+        "WIKI-2",
+        "WIKI-3",
+        "WIKI-4"
+      ],
+      "contributors": {
+        "distinct_agents": 3,
+        "agents": [
+          "bob",
+          "carol",
+          "dave"
+        ]
+      },
+      "review_status": "published",
+      "usage": {
+        "applied_count": 1,
+        "last_applied_at": "2026-08-29T15:02:00Z",
+        "distinct_appliers": 1,
+        "applier_ids": [
+          "codex"
+        ]
+      },
+      "path": "skills/implementation-research"
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "run_id": "recall-run-20260829-120000",
+  "skill_id": "implementation-research",
+  "version": "1.0.0",
+  "agent_id": "claude",
+  "applied": false,
+  "steps_followed": [],
+  "products": [
+    "products/result.md"
+  ],
+  "output_path": "agent-output.md",
+  "ts": "2026-08-29T12:34:00Z"
+}

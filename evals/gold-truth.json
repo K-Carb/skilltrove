@@ -1,0 +1,55 @@
+{
+  "labeler": "demo",
+  "labeled_at": "2026-08-29",
+  "basis": "archive/scored.jsonl 中 5 个 episode 的 title + goal + acceptance（任务定义域），按 cli/cluster.py 四维契约（目标 / 产物 / 输入形态 / 验收边界）判定是否构成同类重复经验。",
+  "scope": "3 个 high 分 episode 参与聚类（ep-2 / ep-3 / ep-4）；ep-1 与 ep-5 为 mid 分不参与聚类，作跨分类负样本对照。",
+  "cluster_truth": {
+    "ep-2": "implementation-research",
+    "ep-3": "implementation-research",
+    "ep-4": "implementation-research"
+  },
+  "same_pairs": [
+    [
+      "ep-2",
+      "ep-3"
+    ],
+    [
+      "ep-2",
+      "ep-4"
+    ],
+    [
+      "ep-3",
+      "ep-4"
+    ]
+  ],
+  "negative_samples": {
+    "pairs": [
+      [
+        "ep-1",
+        "ep-2"
+      ],
+      [
+        "ep-1",
+        "ep-3"
+      ],
+      [
+        "ep-1",
+        "ep-5"
+      ],
+      [
+        "ep-2",
+        "ep-5"
+      ],
+      [
+        "ep-3",
+        "ep-5"
+      ],
+      [
+        "ep-4",
+        "ep-5"
+      ]
+    ],
+    "note": "ep-1（会话修复）与 ep-5（首页提速）是运维类任务，与调研类不同类。"
+  },
+  "cluster_note": "示例数据：三次动手前先调研类任务构成一个真实重复组。"
+}
