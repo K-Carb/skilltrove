@@ -16,11 +16,18 @@ from __future__ import annotations
 import json
 import os
 import sys
+import time
 
 from pydantic import BaseModel
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
+
+# 运行指标（SRE 四黄金信号的本地缩影：流量/错误计数 + 进程存活时长）
+_STARTED_AT = time.time()
+_REQ_TOTAL = 0
+_REQ_5XX = 0
+_REQ_REJECTED = 0
 
 from cli import registry as registry_mod  # noqa: E402
 from cli import llm as llm_mod  # noqa: E402
@@ -237,11 +244,17 @@ def create_app():
 
     @app.middleware("http")
     async def host_guard(request: Request, call_next):
+        global _REQ_TOTAL, _REQ_5XX, _REQ_REJECTED
         host = (request.headers.get("host") or "").rsplit(":", 1)[0].strip("[]").lower()
         if host and host not in allowed_hosts:
+            _REQ_TOTAL += 1
+            _REQ_REJECTED += 1
             return JSONResponse({"detail": "Host 不在允许列表（DNS rebinding 防护；"
                                            "如需远程访问请设 SKILLTROVE_ALLOWED_HOSTS）"}, status_code=403)
         response = await call_next(request)
+        _REQ_TOTAL += 1
+        if response.status_code >= 500:
+            _REQ_5XX += 1
         response.headers["X-Content-Type-Options"] = "nosniff"
         return response
 
@@ -375,8 +388,21 @@ def create_app():
 
     @app.get("/api/health")
     def api_health():
-        """存活探针：进程在 + 版本号（供脚本/监控探测）。"""
-        return {"ok": True, "service": "skilltrove", "version": APP_VERSION}
+        """存活探针 + 运行指标（SRE 四黄金信号的本地缩影）。
+
+        流量/错误：requests_total / responses_5xx；错误可见性：流水线运行总数与失败数；
+        存活：uptime_s。供脚本与人工"一个端点看全运行状态"。
+        """
+        runs = pipeline.list_jobs()
+        runs_failed = sum(1 for j in runs if j.get("status") == "failed")
+        return {
+            "ok": True, "service": "skilltrove", "version": APP_VERSION,
+            "uptime_s": round(time.time() - _STARTED_AT, 1),
+            "requests_total": _REQ_TOTAL,
+            "responses_5xx": _REQ_5XX,
+            "rejected_hosts": _REQ_REJECTED,
+            "pipeline_runs": {"total": len(runs), "failed": runs_failed},
+        }
 
     @app.get("/")
     def index():

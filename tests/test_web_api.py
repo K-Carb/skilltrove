@@ -37,6 +37,16 @@ class WebApiTests(unittest.TestCase):
         self.assertTrue(body["ok"])
         self.assertEqual(body["version"], APP_VERSION)
 
+    def test_health_instruments_golden_signals(self):
+        # SRE Ch6：流量/错误/存活可在单端点可查
+        self.client.get("/api/registry")
+        body = self.client.get("/api/health").json()
+        self.assertGreaterEqual(body["uptime_s"], 0)
+        self.assertGreaterEqual(body["requests_total"], 2)   # 本测试至少已发 2 个请求
+        self.assertEqual(body["responses_5xx"], 0)
+        self.assertIn("total", body["pipeline_runs"])
+        self.assertIn("failed", body["pipeline_runs"])
+
     def test_registry_enriched_with_description(self):
         skills = self.client.get("/api/registry").json()["skills"]
         self.assertTrue(skills, "registry 不应为空")
@@ -158,6 +168,12 @@ class HostGuardTests(unittest.TestCase):
     def test_foreign_host_rejected(self):
         r = self.client.get("/api/health", headers={"Host": "evil.example"})
         self.assertEqual(r.status_code, 403)
+
+    def test_rejected_hosts_counted_as_security_signal(self):
+        before = self.client.get("/api/health").json().get("rejected_hosts", 0)
+        self.client.get("/api/health", headers={"Host": "evil2.example"})
+        after = self.client.get("/api/health").json().get("rejected_hosts", 0)
+        self.assertGreaterEqual(after, before + 1)
 
     def test_foreign_host_with_port_rejected(self):
         r = self.client.get("/api/registry", headers={"Host": "evil.example:8000"})

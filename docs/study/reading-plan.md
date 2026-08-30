@@ -63,7 +63,14 @@
     d) V7.2 错误不泄露内部路径：错误响应 detail 不得含文件系统路径或堆栈
     e) 社区标配：SECURITY.md 漏洞报告指引 + 安全模型声明
   - 本轮实施：c/d 以测试落地（log 注入抵抗 + 404 detail 无路径断言）；新增 SECURITY.md
-- [ ] 7. Google SRE Ch6 监控告警 —— 看板自身可观测性：health 已有，补日志规范与运行指标输出
+- [x] 7. Google SRE Ch6 监控告警 —— 看板自身可观测性：health 已有，补日志规范与运行指标输出
+  - 提炼的可核查标准（2026-08-31 轮 7，依据 sre.google/sre-book/ch06 四黄金信号）：
+    a) 白盒插桩：健康端点应带仪表数据而非裸 ok
+    b) 流量/错误信号：请求总数与 5xx 计数可查
+    c) 饱和/错误可见性：流水线运行总数与失败数可查
+    d) 告警可行动：本地工具无告警系统，以"一个端点看全运行状态"替代
+  - 本轮实施：/api/health 升级——uptime_s + requests_total + responses_5xx（中间件计数）
+    + pipeline_runs（总数/失败数），并补契约测试
 - [ ] 8. Google SRE 发布工程 —— 版本化一致性（APP_VERSION/CHANGELOG/tag 流程文档化）
 - [ ] 9. 《持续交付》Ch5 部署流水线 —— 把 verify 脚本串联成一条"提交即验证"的流水线脚本
 - [ ] 10. 《Accelerate》交付效能 —— 度量现状：从 git 历史统计交付周期/变更失败率是否可自动化

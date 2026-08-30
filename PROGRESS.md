@@ -82,3 +82,13 @@
   最终用 chr() 运行时构造 + 行号截断重建解决；此教训已两次验证，后续轮次直接用 Edit/chr()
 - 验证：ruff 0 违规 / 209 单测 OK / DoD 5/5 / 前端 PASS
 - 下一步：轮 7 取条目 7（Google SRE Ch6 可观测性：health 之外的日志规范与运行指标输出）
+
+
+## 2026-08-31 06:45 轮 7（读书对照：Google SRE Ch6 监控/四黄金信号）
+
+- 审计：health 是裸探针，无流量/错误/存活信号，流水线失败数不可从单端点感知
+- 改动：/api/health 升级为仪表端点——uptime_s + requests_total + responses_5xx
+  （中间件计数）+ rejected_hosts（DNS rebinding 拒绝数，安全信号）+ pipeline_runs
+  （总数/失败数）；403 归入安全信号而非 5xx（修正了首版把 403 误计 5xx 的分类错误）
+- 验证：ruff 0 违规 / 211 单测 OK / DoD 5/5 / 前端 PASS
+- 下一步：轮 8 取条目 8（SRE 发布工程：APP_VERSION/CHANGELOG/tag 流程文档化）
