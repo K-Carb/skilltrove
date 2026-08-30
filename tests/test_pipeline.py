@@ -80,6 +80,21 @@ class TestBuildCommand(unittest.TestCase):
         self.assertEqual(pipeline._job_timeout(), pipeline._job_timeout())
 
 
+def _wait_terminal(run_id: str, timeout_s: float = 5.0):
+    """有界轮询直到 run 进入终态（success/failed/cancelled），返回最终快照。
+
+    F.I.R.S.T 的 Fast/Repeatable 落实：不盲等，超时返回最后快照由断言判失败。
+    """
+    import time
+    deadline = time.time() + timeout_s
+    while time.time() < deadline:
+        snap = pipeline.get_job(run_id)
+        if snap["status"] in ("success", "failed", "cancelled"):
+            return snap
+        time.sleep(0.05)
+    return pipeline.get_job(run_id)
+
+
 class TestJobStore(unittest.TestCase):
     def test_start_get_snapshot_shape(self):
         run_id = pipeline.start_run(["export", "score"], {"source": "/tmp/x"})
@@ -89,24 +104,14 @@ class TestJobStore(unittest.TestCase):
         self.assertEqual(len(snap["step_states"]), 2)
         self.assertIn(snap["status"], ("queued", "running", "success", "failed", "cancelled"))
         # 等它跑完（export 对不存在路径会失败——正好测 failed 路径；不依赖真实数据）
-        import time
-        for _ in range(50):
-            if pipeline.get_job(run_id)["status"] in ("success", "failed", "cancelled"):
-                break
-            time.sleep(0.1)
-        final = pipeline.get_job(run_id)
+        final = _wait_terminal(run_id)
         self.assertIn(final["status"], ("success", "failed"))
         self.assertIsNotNone(final["finished"])
         self.assertIsNotNone(final["duration"])
 
     def test_logs_since_cursor(self):
         run_id = pipeline.start_run(["export"], {"source": "/definitely-not-exist-xyz"})
-        import time
-        for _ in range(50):
-            d = pipeline.logs_since(run_id, 0)
-            if d and d["done"]:
-                break
-            time.sleep(0.1)
+        _wait_terminal(run_id)
         d0 = pipeline.logs_since(run_id, 0)
         self.assertIsNotNone(d0)
         self.assertTrue(d0["done"])

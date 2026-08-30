@@ -34,3 +34,14 @@
   其中 function_call 兜底怪癖已注释记录
 - 验证：ruff 0 违规 / 203 单测 OK / DoD 5/5 / 前端 PASS
 - 下一步：轮 3 取条目 3（Clean Code Ch9 单元测试 F.I.R.S.T 原则）
+
+
+## 2026-08-31 02:45 轮 3（读书对照：Clean Code Ch9 单元测试 F.I.R.S.T）
+
+- 审计：203 项 1.9 秒（Fast✓）、无共享状态/随机/网络/顺序依赖（Independent/Repeatable✓）、
+  全布尔断言（Self-validating✓）；抓到 test_pipeline 两段相同的轮询等待循环（测试代码 DRY 违规）
+- 改动：提取 _wait_terminal() 有界轮询助手（5s 封顶、0.05s 步进，由断言判失败而非盲等）；
+  新增 tests/README.md 把 F.I.R.S.T 姿态与"新增测试五条规则"文档化（含禁止写工作目录、
+  mock 隔离写端点、边界学习测试强制）
+- 验证：ruff 0 违规 / 203 单测 OK / DoD 5/5 / 前端 PASS
+- 下一步：轮 4 取条目 4（Fowler 重构坏味道目录，候选：registry.selftest 150 行等长函数）

@@ -26,7 +26,16 @@
     属跨进程 API 边界的合理取舍（记录不改）；抓到缺口——_extract_codex_text（codex JSONL
     事件流解析）与 parse_comments_md（外部 markdown 解析）两个纯函数边界无学习测试，
     新增 tests/test_llm_boundaries.py 钉住其真实行为
-- [ ] 3. 《代码整洁之道》Ch9 单元测试 —— 测试 F.I.R.S.T 原则、测试可读性（对照 tests/）
+- [x] 3. 《代码整洁之道》Ch9 单元测试 —— 测试 F.I.R.S.T 原则、测试可读性（对照 tests/）
+  - 提炼的可核查标准（2026-08-31 轮 3）：
+    a) Fast：整套测试应秒级（慢了就没人肯跑）
+    b) Independent：测试间无共享可变状态、不依赖执行顺序
+    c) Repeatable：不依赖网络/环境/随机，任何机器结果一致
+    d) Self-validating：布尔输出，无需人工判读
+    e) 测试代码也是代码：无重复样板，约定文档化
+  - 本轮审计：203 项 1.9 秒（a✓）；无共享状态/随机/网络（b/c✓）；全部布尔断言（d✓）；
+    抓到 test_pipeline 两段相同的轮询等待循环（e✗）——提取 _wait_terminal 助手；
+    新增 tests/README.md 把 F.I.R.S.T 姿态与新增测试约定文档化
 - [ ] 4. Fowler《重构（第2版）》坏味道目录（节选）—— 神秘命名/重复代码/过长函数/发散变化，
        挑 3 处最值得的重构并实施（保持测试绿）
 - [ ] 5. OWASP Top 10:2021 逐项 —— 对照 Web 看板（注入/A03 注入面/CORS/错误信息泄露/日志注入）
