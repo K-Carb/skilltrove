@@ -15,7 +15,17 @@
     create_app 144 行、app.js renderPipeline ~150 行）；修 2 处——
     llm.call() 97 行 if/elif 拆为 _call_{claude,codex,kimi,openai_compatible} + 查找表调度；
     删除 app.js 名不副实的 esc()。其余长函数列入条目 4 重构队列
-- [ ] 2. 《代码整洁之道》Ch7 错误处理 / Ch8 边界 —— 错误传播一致性、第三方边界（LLM/子进程）隔离
+- [x] 2. 《代码整洁之道》Ch7 错误处理 / Ch8 边界
+  - 提炼的可核查标准（2026-08-31 轮 2）：
+    a) 错误处理不遮蔽业务逻辑：异常优于返回码，happy path 与错误路径分离
+    b) 异常带上下文：消息含"哪一步/失败类型/关键数据"
+    c) 不返回 None/null 强迫调用方检查（返回特例或抛异常）；确实返回 None 的点要有明确取舍记录
+    d) 第三方边界用适配器包裹，第三方类型不外泄
+    e) 每个第三方解析边界要有"学习测试"钉住真实行为
+  - 本轮审计与改进：llm.py 的 _call_* 已是标准适配器层（满足 d）；call() 返回 ok 字典
+    属跨进程 API 边界的合理取舍（记录不改）；抓到缺口——_extract_codex_text（codex JSONL
+    事件流解析）与 parse_comments_md（外部 markdown 解析）两个纯函数边界无学习测试，
+    新增 tests/test_llm_boundaries.py 钉住其真实行为
 - [ ] 3. 《代码整洁之道》Ch9 单元测试 —— 测试 F.I.R.S.T 原则、测试可读性（对照 tests/）
 - [ ] 4. Fowler《重构（第2版）》坏味道目录（节选）—— 神秘命名/重复代码/过长函数/发散变化，
        挑 3 处最值得的重构并实施（保持测试绿）

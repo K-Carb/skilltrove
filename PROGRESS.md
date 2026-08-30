@@ -21,3 +21,16 @@
   删除 app.js 的 esc()，调用点改为直白的 `line ?? ""`
 - 验证：ruff 0 违规 / 195 单测 OK / DoD 5/5 / 前端 PASS
 - 下一步：轮 2 取条目 2（Clean Code Ch7/8 错误处理与边界）
+
+
+## 2026-08-31 01:45 轮 2（读书对照：Clean Code Ch7 错误处理 / Ch8 边界）
+
+- 审计：llm.py 的 _call_* 已是标准适配器层；call() 返回 ok 字典属跨进程 API 边界合理取舍（记录不改）；
+  抓到缺口——_extract_codex_text 与 parse_comments_md 两个解析边界无学习测试
+- 改动：新增 tests/test_llm_boundaries.py（8 项），钉住 codex JSONL 事件流提取、旧版 result/output
+  兼容、function_call 兜底怪癖、comments.md 切段契约、状态归一词表
+- 学习测试的即时价值：首轮断言有 3 处与边界真实行为不符（reasoning 会并入输出、
+  legacy 需 result 键存在、function_call 独项走原样兜底），全部按实测修正为契约钉子，
+  其中 function_call 兜底怪癖已注释记录
+- 验证：ruff 0 违规 / 203 单测 OK / DoD 5/5 / 前端 PASS
+- 下一步：轮 3 取条目 3（Clean Code Ch9 单元测试 F.I.R.S.T 原则）
