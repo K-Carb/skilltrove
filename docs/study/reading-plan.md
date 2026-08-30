@@ -55,7 +55,14 @@
   - 本轮审计：b/c/d 大体达标；抓到 a 的真缺口——无 Host 校验（Vite/webpack 同款漏洞类），
     新增 Host 允许列表中间件（DNS rebinding 防护，SKILLTROVE_ALLOWED_HOSTS 可扩展）
     + nosniff 响应头 + 对应契约测试
-- [ ] 6. OWASP ASVS L1（适合本地工具的子集）—— 验证清单落地为 tests 断言或 check.py 检查项
+- [x] 6. OWASP ASVS L1 子集落地为自动化检查项
+  - 提炼的可核查标准（2026-08-31 轮 6，依据 ASVS 4.0 V4/V5/V7）：
+    a) V4 访问控制：Host 允许列表（轮 5 已测）
+    b) V5 输入校验：请求体 pydantic 校验 + 写路径守卫（已有契约测试）
+    c) V7.1 日志防注入：含换行/引号/控制字符的输入进日志后，文件必须仍是合法 JSONL
+    d) V7.2 错误不泄露内部路径：错误响应 detail 不得含文件系统路径或堆栈
+    e) 社区标配：SECURITY.md 漏洞报告指引 + 安全模型声明
+  - 本轮实施：c/d 以测试落地（log 注入抵抗 + 404 detail 无路径断言）；新增 SECURITY.md
 - [ ] 7. Google SRE Ch6 监控告警 —— 看板自身可观测性：health 已有，补日志规范与运行指标输出
 - [ ] 8. Google SRE 发布工程 —— 版本化一致性（APP_VERSION/CHANGELOG/tag 流程文档化）
 - [ ] 9. 《持续交付》Ch5 部署流水线 —— 把 verify 脚本串联成一条"提交即验证"的流水线脚本

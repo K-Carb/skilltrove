@@ -57,6 +57,13 @@ class WebApiTests(unittest.TestCase):
     def test_skill_detail_404_for_unknown(self):
         self.assertEqual(self.client.get("/api/skills/definitely-not-exist").status_code, 404)
 
+    def test_error_detail_leaks_no_filesystem_path(self):
+        # ASVS V7.2：错误响应不得泄露内部文件系统路径
+        r = self.client.get("/api/skills/definitely-not-exist")
+        detail = r.json().get("detail", "")
+        self.assertNotIn("/", detail)
+        self.assertNotIn("\\", detail)
+
     def test_skill_detail_has_frontmatter_fields(self):
         d = self.client.get("/api/skills/implementation-research").json()
         self.assertTrue(d["description"])

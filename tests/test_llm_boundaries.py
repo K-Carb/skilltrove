@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import sys
 import unittest
@@ -13,6 +14,7 @@ import unittest
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from cli.adapters import parse_comments_md, parse_description_md, status_normalize  # noqa: E402
+from cli import llm as cli_llm  # noqa: E402
 from cli.llm import _extract_codex_text  # noqa: E402
 
 
@@ -73,6 +75,45 @@ class MarkdownBoundaryTests(unittest.TestCase):
             self.assertEqual(status_normalize(raw), "done")
         self.assertEqual(status_normalize("in_progress"), "in_progress")
         self.assertEqual(status_normalize(None), "")
+
+
+if __name__ == "__main__":
+    unittest.main()
+
+
+class LogInjectionResistanceTests(unittest.TestCase):
+    """ASVS V7.1：含换行/引号/控制字符的内容进日志后，文件必须仍是合法 JSONL。"""
+
+    def setUp(self):
+        import tempfile
+        self.td = tempfile.TemporaryDirectory()
+        self.fake = os.path.join(self.td.name, "llm-log.jsonl")
+        self._orig = cli_llm._LOG_PATH
+        cli_llm._LOG_PATH = self.fake
+
+    def tearDown(self):
+        cli_llm._LOG_PATH = self._orig
+        self.td.cleanup()
+
+    def test_hostile_prompt_stays_valid_jsonl(self):
+        # ASVS V7.1：换行/引号/反斜杠/制表/ANSI 转义全部原样入库（json 转义而非剥离），
+        # 且文件保持逐行合法 JSONL（日志注入抵抗）
+        from cli import llm
+        nl, esc, tab = chr(10), chr(27), chr(9)
+        bs = chr(92)
+        hostile = {
+            "call_id": "x1",
+            "prompt_preview": "第一行" + nl + "第二行 " + chr(34) + "引号" + chr(34) + " " + bs + " 斜杠" + tab + "制表",
+            "error": "退出码 1: " + esc + "[31mANSI 转义" + esc + "[0m",
+        }
+        llm._log(hostile)
+        llm._log({**hostile, "call_id": "x2"})
+        with open(self.fake, encoding="utf-8") as f:
+            rows = [json.loads(line) for line in f if line.strip()]
+        self.assertEqual([r["call_id"] for r in rows], ["x1", "x2"])
+        self.assertIn(nl, rows[0]["prompt_preview"])   # 内容原样保留
+        self.assertIn(esc, rows[0]["error"])
+        self.assertIn(bs, rows[0]["prompt_preview"])
 
 
 if __name__ == "__main__":
