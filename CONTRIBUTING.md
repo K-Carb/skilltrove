@@ -23,3 +23,11 @@ bash web/verify-frontend.sh                          # 前端：全路由截图 
 - 界面只用产品语言；技术参数收进"高级设置/技术详情"折叠
 - 提交信息用中文、一行说清改动；版本号遵循语义化版本，见 [CHANGELOG.md](CHANGELOG.md)
 - 仓库内所有演示数据为虚构（TeamWiki 团队），请勿提交任何真实工作记录、密钥或个人信息
+
+## 发布流程（版本化纪律）
+
+1. 改 `web/app.py` 的 `APP_VERSION`（唯一版本事实源，测试会校验它与 CHANGELOG 一致）
+2. 在 `CHANGELOG.md` 新增对应版本节（日期用发布日）
+3. 全量验证四件套全绿后提交
+4. `git tag -a vX.Y.Z -m "vX.Y.Z"` —— tag 必须打在当前历史的提交上；未推送前可删了重打
+5. 推送时带 `--tags`

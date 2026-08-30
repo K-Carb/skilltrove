@@ -71,7 +71,13 @@
     d) 告警可行动：本地工具无告警系统，以"一个端点看全运行状态"替代
   - 本轮实施：/api/health 升级——uptime_s + requests_total + responses_5xx（中间件计数）
     + pipeline_runs（总数/失败数），并补契约测试
-- [ ] 8. Google SRE 发布工程 —— 版本化一致性（APP_VERSION/CHANGELOG/tag 流程文档化）
+- [x] 8. Google SRE 发布工程 —— 版本化一致性（APP_VERSION/CHANGELOG/tag 流程文档化）
+  - 提炼的可核查标准（2026-08-31 轮 8）：
+    a) 单一版本事实源：APP_VERSION 为准，CHANGELOG 最新节必须包含它（自动化守卫）
+    b) tag 必须指向当前历史的提交，不得悬空指向孤儿提交
+    c) 发布流程文档化：改版本 -> 记 CHANGELOG -> 提交 -> 打 tag
+  - 本轮审计：抓到 tag v0.1.0 悬空指向历史重建前的孤儿提交；CHANGELOG 日期滞后；
+    版本漂移无守卫；发布流程未文档化——四项全修（一致性测试 + 流程入 CONTRIBUTING + 重打 tag）
 - [ ] 9. 《持续交付》Ch5 部署流水线 —— 把 verify 脚本串联成一条"提交即验证"的流水线脚本
 - [ ] 10. 《Accelerate》交付效能 —— 度量现状：从 git 历史统计交付周期/变更失败率是否可自动化
 - [ ] 11. Well-Architected 可靠性支柱 —— 数据备份/恢复演练：registry 损坏时的降级与恢复路径

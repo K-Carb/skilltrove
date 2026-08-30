@@ -64,6 +64,15 @@ class WebApiTests(unittest.TestCase):
         self.assertIn("backend", body)
         self.assertIn("available", body)
 
+    def test_version_single_source_of_truth(self):
+        # 发布工程：APP_VERSION 必须与 CHANGELOG 最新节一致（防版本漂移）
+        import re
+        root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        changelog = open(os.path.join(root, "CHANGELOG.md"), encoding="utf-8").read()
+        latest = re.search(r"^## \[([^\]]+)\]", changelog, re.M)
+        self.assertIsNotNone(latest, "CHANGELOG 缺版本节")
+        self.assertEqual(latest.group(1), APP_VERSION)
+
     def test_skill_detail_404_for_unknown(self):
         self.assertEqual(self.client.get("/api/skills/definitely-not-exist").status_code, 404)
 

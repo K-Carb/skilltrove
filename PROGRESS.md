@@ -92,3 +92,12 @@
   （总数/失败数）；403 归入安全信号而非 5xx（修正了首版把 403 误计 5xx 的分类错误）
 - 验证：ruff 0 违规 / 211 单测 OK / DoD 5/5 / 前端 PASS
 - 下一步：轮 8 取条目 8（SRE 发布工程：APP_VERSION/CHANGELOG/tag 流程文档化）
+
+
+## 2026-08-31 07:45 轮 8（读书对照：Google SRE 发布工程）
+
+- 审计：抓到 tag v0.1.0 悬空（历史重建后指向孤儿提交）；CHANGELOG 日期滞后；版本漂移无守卫；发布流程未文档化
+- 改动：新增 test_version_single_source_of_truth（APP_VERSION ↔ CHANGELOG 最新节一致性守卫）；
+  CHANGELOG 日期对齐；CONTRIBUTING 增"发布流程"五步纪律；删除悬空 tag 并重打到当前 HEAD
+- 验证：ruff 0 违规 / 212 单测 OK / DoD 5/5 / 前端 PASS；git tag --points-at HEAD 确认 v0.1.0 已就位
+- 下一步：轮 9 取条目 9（《持续交付》部署流水线：verify 脚本串联成一条提交即验证流水线）
