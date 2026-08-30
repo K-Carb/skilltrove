@@ -36,7 +36,15 @@
   - 本轮审计：203 项 1.9 秒（a✓）；无共享状态/随机/网络（b/c✓）；全部布尔断言（d✓）；
     抓到 test_pipeline 两段相同的轮询等待循环（e✗）——提取 _wait_terminal 助手；
     新增 tests/README.md 把 F.I.R.S.T 姿态与新增测试约定文档化
-- [ ] 4. Fowler《重构（第2版）》坏味道目录（节选）—— 神秘命名/重复代码/过长函数/发散变化，
+- [x] 4. Fowler《重构（第2版）》坏味道目录（节选）—— 神秘命名/重复代码/过长函数/发散变化，
+       挑 3 处最值得的重构并实施（保持测试绿）
+  - 提炼的可核查标准（2026-08-31 轮 4，依据 refactoring.com 目录）：
+    a) Long Function：编排型函数只做编排，检查逻辑下沉为具名单元
+    b) Duplicated Code：相同逻辑块提取复用
+    c) 重构纪律：小步、测试全程绿、行为不变
+  - 本轮实施 2 处 Extract Function：verify.run() 95 行拆为 _check_dod1~5 五个检查函数
+    （run 只做编排与报告）；顺带修 2 个真 bug——重构暴露的汇总打印丢失、
+    verify.py stdout 接管道时 GBK 编码崩溃（补 reconfigure utf-8）
        挑 3 处最值得的重构并实施（保持测试绿）
 - [ ] 5. OWASP Top 10:2021 逐项 —— 对照 Web 看板（注入/A03 注入面/CORS/错误信息泄露/日志注入）
 - [ ] 6. OWASP ASVS L1（适合本地工具的子集）—— 验证清单落地为 tests 断言或 check.py 检查项

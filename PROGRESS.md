@@ -45,3 +45,15 @@
   mock 隔离写端点、边界学习测试强制）
 - 验证：ruff 0 违规 / 203 单测 OK / DoD 5/5 / 前端 PASS
 - 下一步：轮 4 取条目 4（Fowler 重构坏味道目录，候选：registry.selftest 150 行等长函数）
+
+
+## 2026-08-31 03:50 轮 4（读书对照：Fowler 重构 坏味道目录 Extract Function）
+
+- 审计：对象为 AST 扫描出的长函数 Top（verify.run 95 行 / create_app 144 行 / selftest 150 行）
+- 改动：cli/verify.py run() 拆为 _check_dod1~5 五个检查函数 + run 纯编排（95→约 30 行）。
+  重构过程当场抓到并修 2 个真问题：①切分时丢失"汇总/报告路径"两行打印（门禁 grep 报警发现）；
+  ②verify.py 输出接管道时 GBK 编码可能崩（补 stdout reconfigure utf-8，与 demo.py 同法）
+- 验证：ruff 0 违规 / 203 单测 OK / DoD 5/5 / 前端 PASS（门禁以落文件+grep 方式规避管道编码 flake）
+- 经验记录：bash heredoc 中 `
+` 经多层转义会变成真实换行——跨语言生成代码一律用 Edit 工具或行号手术
+- 下一步：轮 5 取条目 5（OWASP Top 10 逐项对照 Web 看板）

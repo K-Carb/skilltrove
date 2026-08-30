@@ -12,6 +12,9 @@ import os
 import sys
 import time
 
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")  # 管道/重定向时 GBK 控制台会因 ≠ 等字符崩
+
 # 保证 `import cli` 可解析（独立运行 python cli/verify.py 时也需要）
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -71,10 +74,96 @@ def check_cli_steps() -> tuple[bool, list[str], list[str]]:
     return len(ok) == len(CLI_STEPS), ok, missing
 
 
+def _check_dod1_clustering(root, check) -> None:
+    """DoD 1：聚类识别真实重复经验（candidates.json 首个候选有证据）。"""
+    cand_path = os.path.join(root, "data", "candidates.json")
+    if not os.path.isfile(cand_path):
+        check("DoD1 聚类识别真实重复经验", False, f"缺 {cand_path}")
+        return
+    c = _j(cand_path).get("candidates", [])
+    if not c:
+        check("DoD1 聚类识别真实重复经验", False, "candidates.json 无候选")
+        return
+    first = c[0]
+    evidence = (f"候选 {first['candidate_id']} {first['episode_ids']} "
+                f"contributors={first['contributors']} 证据={len(first.get('evidence', []))} 条")
+    check("DoD1 聚类识别真实重复经验", True, evidence)
+
+
+def _published_skills(root) -> list[dict]:
+    reg_path = os.path.join(root, "registry", "registry.json")
+    if not os.path.isfile(reg_path):
+        return []
+    reg = _j(reg_path)
+    return [s for s in reg.get("skills", []) if s.get("review_status") == "published"]
+
+
+def _check_dod2_published_skill(root, published, check) -> None:
+    """DoD 2：草稿 -> 审核 -> 入共享库（published 条目带 evals/cases）。"""
+    if not published:
+        reg_path = os.path.join(root, "registry", "registry.json")
+        check("DoD2 草稿审核入共享库", False,
+              "registry 无 published 条目" + ("" if os.path.isfile(reg_path) else f"（缺 {reg_path}）"))
+        return
+    p = published[0]
+    skill_dir = os.path.join(root, p["path"])
+    has_case = os.path.isdir(os.path.join(skill_dir, "evals", "cases"))
+    evidence = (f"{p['name']} v{p['version']} published source_runs={p.get('source_runs')} "
+                f"contributors={p.get('contributors', {}).get('distinct_agents')} 人 evals/cases={'Y' if has_case else 'N'}")
+    check("DoD2 草稿审核入共享库", has_case, evidence)
+
+
+def _check_dod3_cross_agent_call(root, published, check) -> None:
+    """DoD 3：跨 agent 调用（调用者 != 沉淀者）。"""
+    recall_run = _latest_recall(root)
+    if not recall_run:
+        check("DoD3 跨 agent 调用", False, "无 recall run")
+        return
+    result_path = os.path.join(runs_dir(root), recall_run, "result.json")
+    if not os.path.isfile(result_path):
+        check("DoD3 跨 agent 调用", False, f"缺 {result_path}")
+        return
+    r = _j(result_path)
+    agents = set()
+    for s in published:
+        agents.update(s.get("contributors", {}).get("agents", []))
+    caller = r.get("agent_id")
+    different = caller not in agents
+    evidence = (f"run={r['run_id']} skill={r['skill_id']} caller={caller} "
+                f"applied={r.get('applied')} 沉淀者={sorted(agents)} 调用者≠沉淀者={different}")
+    check("DoD3 跨 agent 调用（调用者≠沉淀者）", r.get("applied") and different, evidence)
+
+
+def _check_dod4_cli_repeatable(check) -> None:
+    """DoD 4：命令可重复执行（六步子命令已注册且模块可导入）。"""
+    ok4, ok_steps, missing = check_cli_steps()
+    evidence4 = f"{len(ok_steps)}/{len(CLI_STEPS)} 子命令可调用（{'、'.join(ok_steps) or '无'}），本地无外部服务依赖"
+    if missing:
+        evidence4 += f"；缺失: {'、'.join(missing)}"
+    check("DoD4 命令可重复执行（六步无外部服务依赖）", ok4, evidence4)
+
+
+def _check_dod5_business_join(root, check) -> None:
+    """DoD 5：业务 join 端到端可验证（A9 本地化：issue 完成态）。"""
+    scored_path = os.path.join(root, "archive", "scored.jsonl")
+    if not os.path.isfile(scored_path):
+        check("DoD5 业务 join 端到端可验证（本地化）", False, f"缺 {scored_path}")
+        return
+    highs = 0
+    with open(scored_path, encoding="utf-8") as f:
+        for line in f:
+            ep = json.loads(line)
+            if (ep.get("score") or {}).get("label") == "high":
+                highs += 1
+    jk = "issue_status_history"
+    evidence = (f"{jk} 查证：{highs} 个高分 episode 的 business_join_key 可查证并回连评分（本地最轻信号）")
+    check("DoD5 业务 join 端到端可验证（本地化）", highs > 0, evidence)
+
+
 def run(args) -> int:
+    """DoD 端到端验收：五项检查各由 _check_dodN 承担，run 只做编排与报告。"""
     root = args.root
     results = []
-
 
     def check(name: str, ok: bool, evidence: str) -> None:
         results.append({"item": name, "pass": bool(ok), "evidence": evidence})
@@ -82,79 +171,12 @@ def run(args) -> int:
 
     print("=== SkillTrove DoD 端到端验收 ===\n")
 
-    # 1. 聚类识别真实重复经验（DoD 1）
-    cand_path = os.path.join(root, "data", "candidates.json")
-    if os.path.isfile(cand_path):
-        cand = _j(cand_path)
-        c = cand.get("candidates", [])
-        if c:
-            first = c[0]
-            evidence = (f"候选 {first['candidate_id']} {first['episode_ids']} "
-                        f"contributors={first['contributors']} 证据={len(first.get('evidence', []))} 条")
-            check("DoD1 聚类识别真实重复经验", True, evidence)
-        else:
-            check("DoD1 聚类识别真实重复经验", False, "candidates.json 无候选")
-    else:
-        check("DoD1 聚类识别真实重复经验", False, f"缺 {cand_path}")
-
-    # 2. 草稿 → 审核 → 入共享库（DoD 2）
-    reg_path = os.path.join(root, "registry", "registry.json")
-    published = []
-    if os.path.isfile(reg_path):
-        reg = _j(reg_path)
-        published = [s for s in reg.get("skills", []) if s.get("review_status") == "published"]
-        if published:
-            p = published[0]
-            skill_dir = os.path.join(root, p["path"])
-            has_case = os.path.isdir(os.path.join(skill_dir, "evals", "cases"))
-            evidence = (f"{p['name']} v{p['version']} published source_runs={p.get('source_runs')} "
-                        f"contributors={p.get('contributors', {}).get('distinct_agents')} 人 evals/cases={'Y' if has_case else 'N'}")
-            check("DoD2 草稿审核入共享库", has_case, evidence)
-        else:
-            check("DoD2 草稿审核入共享库", False, "registry 无 published 条目")
-    else:
-        check("DoD2 草稿审核入共享库", False, f"缺 {reg_path}")
-
-    # 3. 跨 agent 调用（DoD 3，调用者 ≠ 沉淀者）
-    recall_run = _latest_recall(root)
-    if recall_run:
-        result_path = os.path.join(runs_dir(root), recall_run, "result.json")
-        if os.path.isfile(result_path):
-            r = _j(result_path)
-            agents = set()
-            for s in published:
-                agents.update(s.get("contributors", {}).get("agents", []))
-            caller = r.get("agent_id")
-            different = caller not in agents
-            evidence = (f"run={r['run_id']} skill={r['skill_id']} caller={caller} "
-                        f"applied={r.get('applied')} 沉淀者={sorted(agents)} 调用者≠沉淀者={different}")
-            check("DoD3 跨 agent 调用（调用者≠沉淀者）", r.get("applied") and different, evidence)
-        else:
-            check("DoD3 跨 agent 调用", False, f"缺 {result_path}")
-    else:
-        check("DoD3 跨 agent 调用", False, "无 recall run")
-
-    # 4. 命令可重复执行（DoD 4）：实证 = 六步子命令已注册且模块可导入
-    ok4, ok_steps, missing = check_cli_steps()
-    evidence4 = f"{len(ok_steps)}/{len(CLI_STEPS)} 子命令可调用（{'、'.join(ok_steps) or '无'}），本地无外部服务依赖"
-    if missing:
-        evidence4 += f"；缺失: {'、'.join(missing)}"
-    check("DoD4 命令可重复执行（六步无外部服务依赖）", ok4, evidence4)
-
-    # 5. 业务 join 端到端可验证（DoD 5，A9 本地化：issue 完成态）
-    scored_path = os.path.join(root, "archive", "scored.jsonl")
-    if os.path.isfile(scored_path):
-        highs = 0
-        with open(scored_path, encoding="utf-8") as f:
-            for line in f:
-                ep = json.loads(line)
-                if (ep.get("score") or {}).get("label") == "high":
-                    highs += 1
-        jk = "issue_status_history"
-        evidence = (f"{jk} 查证：{highs} 个高分 episode 的 business_join_key 可查证并回连评分（本地最轻信号）")
-        check("DoD5 业务 join 端到端可验证（本地化）", highs > 0, evidence)
-    else:
-        check("DoD5 业务 join 端到端可验证（本地化）", False, f"缺 {scored_path}")
+    published = _published_skills(root)
+    _check_dod1_clustering(root, check)
+    _check_dod2_published_skill(root, published, check)
+    _check_dod3_cross_agent_call(root, published, check)
+    _check_dod4_cli_repeatable(check)
+    _check_dod5_business_join(root, check)
 
     # 汇总
     n_pass = sum(1 for r in results if r["pass"])
