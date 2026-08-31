@@ -10,11 +10,11 @@ start.bat        rem 启动看板 http://127.0.0.1:8000
 ## 改动前后必须跑的验证
 
 ```bash
-.venv/Scripts/python -m unittest discover -s tests   # 单元测试（当前 181 项）
-bash web/verify-frontend.sh                          # 前端：全路由截图 + DOM 断言 + JS 语法 + 单测
-.venv/Scripts/python demo.py --quick                 # 端到端 DoD 验收（应 5/5）
+bash pipeline.sh    # 一条命令跑完整流水线：lint -> JS 语法 -> 单测 -> DoD -> 前端（fail-fast，含各阶段耗时）
 ```
 
+细分命令（调试单阶段时用）：lint `ruff check .`；单测 `python -m unittest discover -s tests`；
+DoD `python demo.py --quick`；前端 `bash web/verify-frontend.sh`。
 推送前确认 CI（GitHub Actions）为绿。
 
 ## 约定

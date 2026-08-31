@@ -78,7 +78,14 @@
     c) 发布流程文档化：改版本 -> 记 CHANGELOG -> 提交 -> 打 tag
   - 本轮审计：抓到 tag v0.1.0 悬空指向历史重建前的孤儿提交；CHANGELOG 日期滞后；
     版本漂移无守卫；发布流程未文档化——四项全修（一致性测试 + 流程入 CONTRIBUTING + 重打 tag）
-- [ ] 9. 《持续交付》Ch5 部署流水线 —— 把 verify 脚本串联成一条"提交即验证"的流水线脚本
+- [x] 9. 《持续交付》Ch5 部署流水线 —— 把 verify 脚本串联成一条"提交即验证"流水线
+  - 提炼的可核查标准（2026-08-31 轮 9，依据 continuousdelivery.com Ch5）：
+    a) 一条命令：任何人一条命令跑完构建+测试全部验收
+    b) 阶段最快优先：commit stage 秒级打头，慢阶段靠后
+    c) fail-fast：任何阶段失败立即中止并指出日志位置
+    d) 反脆弱判定：验收判定读产物文件而非 grep 输出（规避编码 flake）
+  - 本轮实施：pipeline.sh（lint 0s -> js 0s -> 单测 3s -> DoD 0s -> 前端 586s，
+    fail-fast + 耗时汇总 + 日志落 .scratch/pipeline/）；CONTRIBUTING 改为一条命令入口
 - [ ] 10. 《Accelerate》交付效能 —— 度量现状：从 git 历史统计交付周期/变更失败率是否可自动化
 - [ ] 11. Well-Architected 可靠性支柱 —— 数据备份/恢复演练：registry 损坏时的降级与恢复路径
 - [ ] 12. Well-Architected 运维卓越支柱 —— 常见故障 playbook 写入 docs/runbook.md

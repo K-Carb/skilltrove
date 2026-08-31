@@ -101,3 +101,14 @@
   CHANGELOG 日期对齐；CONTRIBUTING 增"发布流程"五步纪律；删除悬空 tag 并重打到当前 HEAD
 - 验证：ruff 0 违规 / 212 单测 OK / DoD 5/5 / 前端 PASS；git tag --points-at HEAD 确认 v0.1.0 已就位
 - 下一步：轮 9 取条目 9（《持续交付》部署流水线：verify 脚本串联成一条提交即验证流水线）
+
+
+## 2026-08-31 08:50 轮 9（读书对照：《持续交付》Ch5 部署流水线）
+
+- 审计：四道门禁此前靠手工按序敲，无一条命令入口、无耗时可见性、无 fail-fast
+- 改动：新增 pipeline.sh——lint(0s) -> js 语法(0s) -> 单测(3s) -> DoD(0s) -> 前端(586s)，
+  阶段最快优先、fail-fast 中止并指出日志位置、耗时汇总；DoD 判定改为读 docs/dod-report.json
+  （规避 grep 中文输出的编码 flake——轮 4 记录的坑在脚本层根治）；CONTRIBUTING 验证入口收敛为
+  一条命令 bash pipeline.sh
+- 验证：流水线自身全绿（如上耗时）；tag v0.1.0 保持在 HEAD 附近未动
+- 下一步：轮 10 取条目 10（《Accelerate》交付效能度量：从 git 历史统计交付周期是否可自动化）
