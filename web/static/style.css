@@ -10,7 +10,7 @@
   --surface-2: #f3f2ef;
   --ink: #1c1917;
   --ink-2: #57534e;
-  --ink-3: #a8a29e;
+  --ink-3: #78716c;
   --line: #e7e5e4;
   --line-strong: #d6d3d1;
 
@@ -342,6 +342,9 @@ footer .dot { opacity: 0.6; }
 @media (max-width: 720px) {
   header { flex-wrap: wrap; gap: var(--s2); padding: var(--s3) var(--s4); }
   nav { margin-left: 0; width: 100%; overflow-x: auto; }
+  nav button, button.action { min-height: 40px; }  /* 触控目标下限（Refactoring UI/WCAG 2.5.8） */
+  nav button { flex: 1 1 auto; }
+  input.search-box, .issue-text, .pipeline-field input, .pipeline-field select { min-height: 40px; }
   main { margin-top: var(--s4); padding: 0 var(--s4); }
   .grid { grid-template-columns: 1fr; }
   /* 向导进度条允许换行；收件箱/审核按钮成整行大目标 */

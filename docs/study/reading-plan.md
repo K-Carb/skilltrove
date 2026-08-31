@@ -86,6 +86,15 @@
     d) 反脆弱判定：验收判定读产物文件而非 grep 输出（规避编码 flake）
   - 本轮实施：pipeline.sh（lint 0s -> js 0s -> 单测 3s -> DoD 0s -> 前端 586s，
     fail-fast + 耗时汇总 + 日志落 .scratch/pipeline/）；CONTRIBUTING 改为一条命令入口
-- [ ] 10. 《Accelerate》交付效能 —— 度量现状：从 git 历史统计交付周期/变更失败率是否可自动化
+- [x] 10a. 前端专项 1：对比度 + 触控目标（Wathan&Schoger《Refactoring UI》/ WCAG 2.1 AA）
+  - 提炼的可核查标准（2026-08-31 人工补位轮——队列盲点修正：前 9 轮零前端迭代）：
+    a) 正文级文本对比度 >= 4.5:1（WCAG AA 1.4.3）
+    b) 移动端触控目标 >= 40px（WCAG 2.5.8 / Refactoring UI 触控下限）
+  - 本轮审计（WCAG 公式实算）：--ink-3 #a8a29e 在白卡上 2.52:1 严重不达标，
+    而 row-meta/向导提示/流水线标签等小字全在用它（CSS 17 处）；移动端按钮/输入无触控下限
+  - 改动：--ink-3 换 stone-500 #78716c（白卡 4.8:1 ✓，单一令牌点修复全部 17 处）；
+    移动端 nav/按钮/输入 min-height 40px
+  - 遗留（下一轮 10b 继续）：字号刻度与间距节奏全面审计、信息密度审视
+- [ ] 10b. 前端专项 2：字号刻度/间距节奏/信息密度全面审计（Refactoring UI 层级章节）
 - [ ] 11. Well-Architected 可靠性支柱 —— 数据备份/恢复演练：registry 损坏时的降级与恢复路径
 - [ ] 12. Well-Architected 运维卓越支柱 —— 常见故障 playbook 写入 docs/runbook.md
