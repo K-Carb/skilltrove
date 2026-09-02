@@ -37,16 +37,35 @@ if hasattr(sys.stdout, "reconfigure"):
 
 KEYWORDS = ("调研", "PRD", "评审", "范围", "分析")
 
-# LLM 四维复核判断（示例数据上的既有判定）。
-# 键为 (episode_id_a, episode_id_b)，值为 llm 判断。
-LLM_REVIEW_VERDICTS = {
-    ("ep-4", "ep-5"): "same",
-    ("ep-1", "ep-3"): "different",
-    ("ep-1", "ep-5"): "different",
-    ("ep-3", "ep-4"): "same",
-    ("ep-5", "ep-6"): "different",
-    ("ep-4", "ep-6"): "different",
-}
+# 复核判定的事实源：cluster 步骤写出的候选产物（不再硬编码判定）
+DEFAULT_CANDIDATES = os.path.join(ROOT, "data", "candidates.json")
+
+
+def verdicts_from_candidates(candidates_path: str) -> dict[tuple[str, str], str]:
+    """从聚类候选产物反推 LLM 复核判定（取代此前硬编码的过期常量）。
+
+    candidates.json 的候选簇是「通过四维复核的配对」经并查集合并的结果，
+    故簇内两两配对即复核判为 same 的对。键为排序后的无序对，与粗筛边的
+    (i, j) 顺序解耦。
+
+    产物缺失 / 损坏 / 无候选时返回空字典——调用方必须显式处理，不得默默
+    降级。旧实现硬编码了一批 episode 编号，数据迭代后编号对不上，指标会
+    静默退化成 ARI=0（full 管线反而输给 baseline），本次即修此问题。
+    """
+    if not os.path.isfile(candidates_path):
+        return {}
+    try:
+        with open(candidates_path, encoding="utf-8") as f:
+            data = json.load(f)
+    except (OSError, ValueError):
+        return {}
+    out: dict[tuple[str, str], str] = {}
+    for cand in data.get("candidates") or []:
+        ids = [i for i in (cand.get("episode_ids") or []) if isinstance(i, str)]
+        for i in range(len(ids)):
+            for j in range(i + 1, len(ids)):
+                out[tuple(sorted((ids[i], ids[j])))] = "same"
+    return out
 
 
 # ---------- 外部指标：ARI / AMI（校正随机） ----------
@@ -229,7 +248,16 @@ def run_variant(name: str, clusters: list[list], truth_labels: dict,
 
     clusters 可能只含连通分量（孤立 episode 缺席），这里补全为完整划分，
     保证单例簇计入簇数与配对统计（与生产管线语义一致）。
+
+    真值必须覆盖全部 episode_ids，否则抛出带缺失清单的错误——重跑 score 后
+    参与聚类的集合会变（如某 episode 从 low 升为 high），真值文件不跟着更新
+    时，静默的 KeyError 只会让人以为是脚本坏了。
     """
+    missing = [e for e in episode_ids if e not in truth_labels]
+    if missing:
+        raise KeyError(
+            f"真值文件未覆盖参与聚类的 episode: {missing}。"
+            f"（scored.jsonl 的高分集合变了？请同步更新 gold-truth.json 的 cluster_truth）")
     present = {eid for c in clusters for eid in c}
     complete = [list(c) for c in clusters] + [[e] for e in episode_ids if e not in present]
     pred_pairs = _pairs_from_clusters(complete)
@@ -248,7 +276,8 @@ def run_variant(name: str, clusters: list[list], truth_labels: dict,
     return row
 
 
-def run_all(episodes_path: str, gold_path: str, out_path: str) -> int:
+def run_all(episodes_path: str, gold_path: str, out_path: str,
+            candidates_path: str = DEFAULT_CANDIDATES) -> int:
     # 数据
     gold = json.load(open(gold_path, encoding="utf-8"))
     truth_labels = gold["cluster_truth"]
@@ -276,15 +305,25 @@ def run_all(episodes_path: str, gold_path: str, out_path: str) -> int:
     vec_variant("vector_only_050_trigram_only", 0.5, 0.0, 1.0)  # 消融：去掉 bigram
     vec_variant("vector_only_050_equal", 0.5, 0.5, 0.5)   # 消融：等权
 
-    # ② 完整管线（向量粗筛 + LLM 四维复核，复核用 llm-log（如存在））
+    # ② 完整管线（向量粗筛 + LLM 四维复核）。复核判定从候选产物派生，
+    #    产物缺失时该变体显式跳过——不留一个静默为 0 的假数字。
     edges = vector_edges(eps, 0.5, 0.6, 0.4)
-    same = [(a, b) for a, b, _ in edges if LLM_REVIEW_VERDICTS.get((a, b)) == "same"]
-    clusters = clusters_from_edges(episode_ids, same)
-    results["full_pipeline_llm"] = run_variant("full_pipeline_llm", clusters,
-                                               truth_labels, truth_pairs, episode_ids)
-    results["full_pipeline_llm"]["edges"] = [(a, b, s) for a, b, s in edges]
-    results["full_pipeline_llm"]["llm_rejected"] = sorted(
-        {(a, b) for a, b, _ in edges if LLM_REVIEW_VERDICTS.get((a, b)) == "different"})
+    verdicts = verdicts_from_candidates(candidates_path)
+    if verdicts:
+        same = [(a, b) for a, b, _ in edges if verdicts.get(tuple(sorted((a, b)))) == "same"]
+        clusters = clusters_from_edges(episode_ids, same)
+        results["full_pipeline_llm"] = run_variant("full_pipeline_llm", clusters,
+                                                   truth_labels, truth_pairs, episode_ids)
+        results["full_pipeline_llm"]["edges"] = [(a, b, s) for a, b, s in edges]
+        results["full_pipeline_llm"]["verdict_source"] = candidates_path
+        results["full_pipeline_llm"]["llm_rejected"] = sorted(
+            {(a, b) for a, b, _ in edges if verdicts.get(tuple(sorted((a, b)))) != "same"})
+    else:
+        results["full_pipeline_llm"] = {
+            "variant": "full_pipeline_llm",
+            "skipped": f"无复核判定来源（{candidates_path} 缺失或无候选）",
+        }
+        print(f"\n[跳过] full_pipeline_llm：{results['full_pipeline_llm']['skipped']}")
 
     # ③ 规则降级管线（向量粗筛 + 关键词规则复核）——LLM 不可用时的兜底
     rule_same = [(a, b) for a, b, _ in edges
@@ -332,7 +371,7 @@ def run_all(episodes_path: str, gold_path: str, out_path: str) -> int:
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(payload, f, ensure_ascii=False, indent=2)
 
-    _print_summary(results, episode_ids)
+    _print_summary(results, episode_ids, truth_labels, truth_pairs)
     print(f"\n全表 JSON -> {out_path}")
     return 0
 
@@ -344,8 +383,11 @@ def _neg_stats(neg: list) -> dict:
             "misjudged_count": sum(1 for x in neg if x["misjudged_as_same_by_vector"])}
 
 
-def _print_summary(results: dict, episode_ids: list) -> None:
-    print("\n=== 变体对照（真值簇数=5，same 对=3） ===")
+def _print_summary(results: dict, episode_ids: list, truth_labels: dict,
+                   truth_pairs: set) -> None:
+    # 真值规模从 gold 推导（此前硬编码「簇数=5，same 对=3」，数据一换就错）
+    n_truth_clusters = len(set(truth_labels.values()))
+    print(f"\n=== 变体对照（真值簇数={n_truth_clusters}，same 对={len(truth_pairs)}） ===")
     header = f"{'变体':<34}{'ARI':>7}{'AMI':>7}{'P':>7}{'R':>7}{'F1':>7}{'簇数':>5}"
     print(header)
     for name in ("full_pipeline_llm", "rule_fallback_pipeline", "vector_only_050_mixed",
@@ -354,6 +396,10 @@ def _print_summary(results: dict, episode_ids: list) -> None:
                  "vector_only_050_equal", "baseline_keyword_only",
                  "baseline_all_diff", "baseline_all_same"):
         r = results[name]
+        if "skipped" in r:
+            print(f"{name:<34}{'—':>7}{'—':>7}{'—':>7}{'—':>7}{'—':>7}{'跳过':>5}"
+                  f"  {r['skipped']}")
+            continue
         p = r["pair_prf"]
         print(f"{name:<34}{r['ari']:>7}{r['ami']:>7}{p['precision']:>7}"
               f"{p['recall']:>7}{p['f1']:>7}{r['n_clusters']:>5}")
@@ -370,10 +416,12 @@ def main() -> int:
     p = argparse.ArgumentParser(description="SkillTrove 算法四件套评估（纯 Python，零 LLM）")
     p.add_argument("--episodes", default=os.path.join(ROOT, "archive", "scored.jsonl"))
     p.add_argument("--gold", default=os.path.join(ROOT, "evals", "gold-truth.json"))
+    p.add_argument("--candidates", default=DEFAULT_CANDIDATES,
+                   help="聚类候选产物（LLM 复核判定的事实源）")
     p.add_argument("--out", default=os.path.join(ROOT, "evals", "results",
                                                  "algorithm-eval-2026-08-29.json"))
     args = p.parse_args()
-    return run_all(args.episodes, args.gold, args.out)
+    return run_all(args.episodes, args.gold, args.out, args.candidates)
 
 
 if __name__ == "__main__":

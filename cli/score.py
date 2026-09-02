@@ -83,6 +83,12 @@ def score_episode(ep: dict, manifest_keys: set[str]) -> dict:
 def run(args) -> int:
     eps = _load_episodes(args.episodes)
     manifest_keys = _load_manifest_keys(args.manifest)
+    # 显式指定了 manifest 却读不到，是典型的「静默全灭」：join 查证会全部失败、
+    # 所有 episode 判为低分，下游 cluster 拿不到输入却只会报「没发现重复」。
+    # 这里必须喊出来，否则故障要穿过三层才被看见。
+    if args.manifest and not os.path.isfile(args.manifest):
+        print(f"警告: manifest 不存在（{args.manifest}）——join 查证将全部失败，"
+              f"所有 episode 都会判为低分。请确认 export 步骤产出了该文件。")
 
     out_path = args.out or os.path.join(os.path.dirname(os.path.abspath(args.episodes)), "scored.jsonl")
     os.makedirs(os.path.dirname(os.path.abspath(out_path)) or ".", exist_ok=True)

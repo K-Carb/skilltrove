@@ -24,10 +24,19 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from cli import registry  # noqa: E402
 
-DEFAULT_TASK = (
-    "对 某开源工作流框架 这个项目做一次对象定位判断：它是「竞品」还是「本项目可参考/借鉴的对象」？"
-    "按 skill 的换框校准步骤给出结论，并把结论写入一个 markdown 文件。"
-)
+def default_task(fm: dict) -> str:
+    """按技能自身说明派生一个与之匹配的调用任务。
+
+    旧的默认值硬编码了「某开源工作流框架的对象定位判断 / 换框校准步骤」，
+    那是为另一类技能写的。用在调研选型类技能上时 agent 无从遵循其 Steps，
+    applied 判定必然为假，却看不出是任务错配还是技能没被遵循。
+    """
+    hint = (fm.get("when_to_use") or fm.get("description") or "").strip()
+    if hint:
+        return (f"请严格按该 skill 的 Steps，完成一次符合其适用场景的小任务：{hint}。"
+                f"把完整产物以 markdown 直接输出。")
+    return ("请严格按该 skill 的 Steps 完成一个小任务（主题自定，能体现各步骤即可），"
+            "把完整产物以 markdown 直接输出。")
 
 
 def _read_frontmatter(md_text: str) -> dict:
@@ -89,7 +98,7 @@ def run(args) -> int:
     os.makedirs(prod_dir, exist_ok=True)
 
     # 1. 构造调用任务（agent = 另一 agent，非沉淀者）
-    task = args.prompt or DEFAULT_TASK
+    task = args.prompt or default_task(fm)
     agent_prompt = (
         f"你在当前工作目录（本项目仓库根）下工作。\n"
         f"任务要求：\n"
@@ -155,7 +164,8 @@ def run(args) -> int:
         "agent_id": agent_id,
         "applied": applied,
         "steps_followed": steps_followed,
-        "products": [os.path.join("products", p) for p in products],
+        # 统一正斜杠：os.path.join 在 Windows 上会写进反斜杠，留档跨平台不可读
+        "products": ["products/" + p for p in products],
         "output_path": "agent-output.md",
         "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     }

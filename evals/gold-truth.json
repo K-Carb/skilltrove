@@ -2,8 +2,9 @@
   "labeler": "demo",
   "labeled_at": "2026-08-29",
   "basis": "archive/scored.jsonl 中 5 个 episode 的 title + goal + acceptance（任务定义域），按 cli/cluster.py 四维契约（目标 / 产物 / 输入形态 / 验收边界）判定是否构成同类重复经验。",
-  "scope": "3 个 high 分 episode 参与聚类（ep-2 / ep-3 / ep-4）；ep-1 与 ep-5 为 mid 分不参与聚类，作跨分类负样本对照。",
+  "scope": "4 个 high 分 episode 参与聚类（ep-1 / ep-2 / ep-3 / ep-4）；ep-5 因无产出证据判为 low 分，不参与聚类，仅作负样本对照。ep-1 参与聚类但自成一类（运维修复类），是聚类范围内的真负样本。",
   "cluster_truth": {
+    "ep-1": "session-timeout-fix",
     "ep-2": "implementation-research",
     "ep-3": "implementation-research",
     "ep-4": "implementation-research"

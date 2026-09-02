@@ -1,0 +1,18 @@
+{
+  "run_id": "recall-run-20260831-140800",
+  "skill_id": "implementation-research",
+  "version": "1.0.0",
+  "agent_id": "codex",
+  "applied": true,
+  "steps_followed": [
+    "1. **明确候选方案**：列出 2-4 个主流实现路线，不遗漏\"最土但够用\"的那个。",
+    "2. **定对比维度**：成本、迁移难度、长期维护、与现有系统的契合度，按功能实际关切取舍。",
+    "3. **逐项对比**：每个候选按同一组维度评估，结论落来源（文档、源码、实测）。",
+    "4. **给出推荐**：一个明确结论加理由，不写\"都可以\"。"
+  ],
+  "products": [
+    "products/result.md"
+  ],
+  "output_path": "agent-output.md",
+  "ts": "2026-08-31T06:09:33Z"
+}

@@ -2,7 +2,8 @@
   "facts_id": "facts-demo-001",
   "frozen_at": "2026-08-29T12:00:00Z",
   "provider": "log-export",
-  "workspace_id": "teamwiki-demo",
+  "shape": "log-export",
+  "source": "(历史留档) 早期演示导出包，非当前 examples/sources 重跑产物",
   "time_window": {
     "from": "2026-08-29",
     "to": "2026-08-29"
@@ -36,5 +37,10 @@
       ]
     }
   ],
-  "excluded_agents": []
+  "excluded_agents": [],
+  "channels": [
+    "log-export"
+  ],
+  "signature_note": "facts 随包冻结，下游只读分析",
+  "provenance_note": "历史留档：字段已对齐 adapters.run_export 的当前 schema（旧版用 workspace_id，新版为 shape/source/channels）。原始导出包路径不在仓库内，故 source 未指向真实路径；重跑 export 会覆盖本文件。"
 }

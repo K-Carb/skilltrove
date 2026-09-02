@@ -41,17 +41,6 @@ import evaluate_pipeline as ev  # noqa: E402
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
 
-RESEARCH_LABEL = "research-round"
-RESEARCH_MEMBERS = ["ep-WIKI-3", "ep-WIKI-4", "ep-WIKI-5"]
-
-# 反事实标注定义（键 = 标注名，值 = 相对基准的修订；见 main() 内构造）
-COUNTERFACTUALS = {
-    "merge_AGEN6_into_research": "WIKI-6（汇总最终报告）并入调研簇：与四维契约「汇总≠调研」的裁断相反",
-    "merge_AGEN1_into_research": "WIKI-1（项目整体分析）并入调研簇：任务类型判定相反",
-    "merge_AGEN6_AGEN1_into_research": "WIKI-6 与 WIKI-1 同时并入调研簇（最激进边界）",
-}
-
-
 def derive_pairs(labels: dict) -> set:
     """从簇标签推导同类对（同一标签内两两组合）。"""
     by_label: dict = {}
@@ -65,23 +54,44 @@ def derive_pairs(labels: dict) -> set:
     return pairs
 
 
-def build_labelings(base: dict) -> dict:
-    """基准 + 反事实标注集合。每个标注 = {episode_id: cluster_label}。"""
-    labelings = {"base": dict(base)}
-    for name in COUNTERFACTUALS:
-        revised = dict(base)
-        if "AGEN6" in name:
-            revised["ep-WIKI-6"] = RESEARCH_LABEL
-        if "AGEN1" in name:
-            revised["ep-WIKI-1"] = RESEARCH_LABEL
+def build_labelings(base: dict, episode_ids: list) -> tuple[dict, dict]:
+    """基准 + 反事实标注集合，返回 (标注集合, 说明集合)。
+
+    反事实一律用「把某个边界 episode 从所在簇剥离成独类」构造，不硬编码编号。
+    旧实现硬编码了 WIKI-1 / WIKI-6 两个目标和一个簇标签名 'research-round'，
+    与 gold-truth 的实际标签（如 implementation-research）不一致、目标 episode
+    也常常不在参与聚类的范围内——结果是「并入」退化成「新建一个不相干的簇」，
+    敏感性分析静默失效，却仍输出一个看起来稳健的区间。已改为数据驱动。
+
+    每个标注都覆盖全部 episode_ids（缺失的补自身 id 作独类），避免下游
+    `truth_labels[eid]` 抛 KeyError。
+    """
+    canonical = {eid: base.get(eid, eid) for eid in episode_ids}
+    labelings: dict[str, dict] = {"base": dict(canonical)}
+    notes: dict[str, str] = {"base": "基准标注（gold-truth 原文）"}
+
+    members_by_label: dict[str, list] = {}
+    for eid, lab in canonical.items():
+        members_by_label.setdefault(lab, []).append(eid)
+
+    for eid in episode_ids:
+        lab = canonical[eid]
+        partners = [x for x in members_by_label.get(lab, []) if x != eid]
+        if not partners:
+            continue  # 独类 episode 再剥离没有意义
+        revised = dict(canonical)
+        revised[eid] = f"detached:{eid}"
+        name = f"detach_{eid}"
         labelings[name] = revised
-    return labelings
+        notes[name] = (f"{eid} 从「{lab}」簇剥离成独类："
+                       f"原簇另有 {len(partners)} 个成员（{'、'.join(partners)}）")
+    return labelings, notes
 
 
-def build_variant_clusters(eps: list[dict], episode_ids: list) -> dict:
+def build_variant_clusters(eps: list[dict], episode_ids: list, verdicts: dict) -> dict:
     """预计算 11 个变体的簇划分（与标注无关，只算一次）。"""
     edges = ev.vector_edges(eps, 0.5, 0.6, 0.4)
-    same = [(a, b) for a, b, _ in edges if ev.LLM_REVIEW_VERDICTS.get((a, b)) == "same"]
+    same = [(a, b) for a, b, _ in edges if verdicts.get(tuple(sorted((a, b)))) == "same"]
     rule_same = [(a, b) for a, b, _ in edges
                  if cluster.rule_fallback(eps[episode_ids.index(a)], eps[episode_ids.index(b)])["judgement"] == "same"]
     kw_edges = ev.keyword_edges(eps, episode_ids)
@@ -129,6 +139,8 @@ def main() -> int:
     p = argparse.ArgumentParser(description="标注敏感性分析（零 LLM，纯标准库）")
     p.add_argument("--episodes", default=os.path.join(ROOT, "archive", "scored.jsonl"))
     p.add_argument("--gold", default=os.path.join(ROOT, "evals", "gold-truth.json"))
+    p.add_argument("--candidates", default=ev.DEFAULT_CANDIDATES,
+                   help="聚类候选产物（LLM 复核判定的事实源）")
     p.add_argument("--out", default=os.path.join(ROOT, "evals", "results",
                                                  "annotation-sensitivity-2026-08-29.json"))
     args = p.parse_args()
@@ -139,8 +151,13 @@ def main() -> int:
     episode_ids = [e["episode_id"] for e in eps]
     print(f"参与聚类的 episode（{len(eps)}）: {episode_ids}")
 
-    labelings = build_labelings(base)
-    variant_clusters = build_variant_clusters(eps, episode_ids)
+    verdicts = ev.verdicts_from_candidates(args.candidates)
+    if not verdicts:
+        print(f"[警告] 无复核判定来源（{args.candidates} 缺失或无候选），"
+              f"full_pipeline_llm 将退化为「无任何 same 边」，ARI 不代表真实管线表现")
+
+    labelings, notes = build_labelings(base, episode_ids)
+    variant_clusters = build_variant_clusters(eps, episode_ids, verdicts)
 
     # 每种标注下重算全表
     per_labeling = {}
@@ -162,28 +179,40 @@ def main() -> int:
     full_f1 = {lname: v["variants"]["full_pipeline_llm"]["pair_prf"]["f1"] for lname, v in per_labeling.items()}
     kw_ari = {lname: v["variants"]["baseline_keyword_only"]["ari"] for lname, v in per_labeling.items()}
 
+    base_ari = full_ari["base"]
+    # 影响最大的反事实（按 full 管线 ARI 相对基准的偏移幅度取绝对值最大者）
+    deltas = {k: full_ari[k] - base_ari for k in full_ari if k != "base"}
+    worst = max(deltas, key=lambda k: abs(deltas[k])) if deltas else None
+
+    if worst is None:
+        takeaway = ("参与聚类的 episode 均为独类，无可做的边界反事实；"
+                    "主结论区间等于单点，不代表已验证稳健。")
+    elif deltas[worst] == 0:
+        takeaway = (f"全部 {len(deltas)} 个边界反事实下 full 管线 ARI 均无变化（恒为 "
+                    f"{base_ari}），本数据集上主结论对单点裁断不敏感。")
+    else:
+        takeaway = (f"主结论对单点标注敏感：{worst}（{notes[worst]}）使 full 管线 "
+                    f"ARI 由 {base_ari} 变为 {full_ari[worst]}"
+                    f"（Δ{deltas[worst]:+.4f}），F1 {full_f1['base']} → {full_f1[worst]}。"
+                    f"全区间 ARI [{min(full_ari.values())}, {max(full_ari.values())}]、"
+                    f"F1 [{min(full_f1.values())}, {max(full_f1.values())}]，"
+                    "对外表述须引用区间而非单点。")
+
     summary = {
-        "headline_base": "基准标注下 full 管线 ARI/AMI=1.000、F1=1.000；关键词 baseline F1=0.667",
         "full_pipeline_ari_range": [min(full_ari.values()), max(full_ari.values())],
         "full_pipeline_f1_range": [min(full_f1.values()), max(full_f1.values())],
         "keyword_baseline_ari_range": [min(kw_ari.values()), max(kw_ari.values())],
         "full_pipeline_ari": full_ari,
         "full_pipeline_f1": full_f1,
         "keyword_baseline_ari": kw_ari,
-        "takeaway": (
-            "主结论依赖单点标注：WIKI-6 并入调研簇后 full 管线 ARI 由 1.000 降至 "
-            f"{full_ari['merge_AGEN6_into_research']}（关键词 baseline 反而升至 "
-            f"{kw_ari['merge_AGEN6_into_research']}）；WIKI-6+WIKI-1 同时并入时 "
-            f"full 管线 ARI 降至 {full_ari['merge_AGEN6_AGEN1_into_research']}。"
-            "对外表述须引用区间而非单点。"
-        ),
+        "most_sensitive_counterfactual": worst,
+        "takeaway": takeaway,
     }
 
     payload = {
         "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "gold": {"labeler": gold["labeler"], "revision_note": gold.get("revision", "")},
-        "research_cluster": RESEARCH_MEMBERS,
-        "counterfactuals": COUNTERFACTUALS,
+        "counterfactuals": notes,
         "labelings": labelings,
         "per_labeling": per_labeling,
         "summary": summary,

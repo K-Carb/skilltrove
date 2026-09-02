@@ -33,8 +33,11 @@ def main() -> int:
     check("Python 版本 >= 3.10", sys.version_info >= (3, 10), sys.version.split()[0])
 
     # 数据产物
+    # archive/manifest.json 必须存在：它是 score 的 join 查证依据。缺失会让所有
+    # episode 静默判为低分、下游 cluster 无输入，而故障要穿三层才被看见——
+    # README 与看板「一键发现」都按此路径调用，故纳入自检。
     for name in ("registry/registry.json", "archive/facts.json", "archive/episodes.jsonl",
-                 "archive/scored.jsonl", "data/candidates.json"):
+                 "archive/manifest.json", "archive/scored.jsonl", "data/candidates.json"):
         check(f"产物 {name}", os.path.isfile(os.path.join(ROOT, name)))
 
     # 共享库

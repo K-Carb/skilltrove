@@ -1,0 +1,4 @@
+# eval result for recall-run-20260831-140800
+# judge exit: 0
+
+{"measured_delta": {"case_id": "implementation-research-001", "run_id": "recall-run-20260831-140800", "skill_id": "implementation-research", "agent_id": "codex", "applied": true, "products_count": 1, "steps_followed_count": 4, "blocking": {"skill_id 非空": true, "applied 为真": true, "agent_id 非空": true, "至少一件产物": true}, "content": {"产出含候选清单": true, "产出含对比": true, "产出含带理由的推荐结论": true}, "blocking_pass": true, "content_pass": true, "content_pass_count": "3/3", "judgement": "pass"}}

@@ -23,8 +23,8 @@
       },
       "review_status": "published",
       "usage": {
-        "applied_count": 1,
-        "last_applied_at": "2026-08-29T15:02:00Z",
+        "applied_count": 2,
+        "last_applied_at": "2026-08-31T06:09:33Z",
         "distinct_appliers": 1,
         "applier_ids": [
           "codex"

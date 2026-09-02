@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-08-29T12:30:00Z",
-  "high_episodes": 3,
+  "generated_at": "2026-08-31T04:14:35Z",
+  "high_episodes": 4,
   "pairs_above_threshold": 3,
   "candidates": [
     {
@@ -42,7 +42,7 @@
           "dave"
         ]
       },
-      "similarity": 0.68,
+      "similarity": 0.6311,
       "review": {
         "judgement": "same",
         "target": "同类",
@@ -51,7 +51,7 @@
         "acceptance": "同类",
         "firewall_hit": "无",
         "kind": "procedure",
-        "note": "三次任务都是动手前先调研主流做法：输入同为 issue 描述与现有代码，产物同为带对比与推荐的调研报告，验收都要求给出选型结论，属同类重复经验。"
+        "note": "两个任务同为『动手实现前先调研并给出选型结论与理由』的调研选型任务，交付物形态与验收标准一致，仅调研主题（分页 vs 站内搜索）不同，不构成不同类经验。"
       },
       "evidence": [
         {
@@ -75,5 +75,6 @@
       ],
       "review_method": "llm:claude"
     }
-  ]
+  ],
+  "no_candidate": null
 }

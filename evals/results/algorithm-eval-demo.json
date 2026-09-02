@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-08-30T03:55:23Z",
+  "generated_at": "2026-08-31T06:15:55Z",
   "gold": {
     "labeler": "demo",
-    "n_episodes": 3,
+    "n_episodes": 4,
     "n_same_pairs": 3
   },
   "results": {
@@ -13,9 +13,12 @@
           "ep-2",
           "ep-3",
           "ep-4"
+        ],
+        [
+          "ep-1"
         ]
       ],
-      "n_clusters": 1,
+      "n_clusters": 2,
       "ari": 1.0,
       "ami": 1.0,
       "pair_prf": {
@@ -53,9 +56,12 @@
           "ep-2",
           "ep-3",
           "ep-4"
+        ],
+        [
+          "ep-1"
         ]
       ],
-      "n_clusters": 1,
+      "n_clusters": 2,
       "ari": 1.0,
       "ami": 1.0,
       "pair_prf": {
@@ -94,12 +100,15 @@
           "ep-3"
         ],
         [
+          "ep-1"
+        ],
+        [
           "ep-4"
         ]
       ],
-      "n_clusters": 2,
-      "ari": 0.0,
-      "ami": 0.0,
+      "n_clusters": 3,
+      "ari": 0.3333,
+      "ami": 0.2663,
       "pair_prf": {
         "tp": 1,
         "fp": 0,
@@ -134,9 +143,12 @@
           "ep-2",
           "ep-3",
           "ep-4"
+        ],
+        [
+          "ep-1"
         ]
       ],
-      "n_clusters": 1,
+      "n_clusters": 2,
       "ari": 1.0,
       "ami": 1.0,
       "pair_prf": {
@@ -174,9 +186,12 @@
           "ep-2",
           "ep-3",
           "ep-4"
+        ],
+        [
+          "ep-1"
         ]
       ],
-      "n_clusters": 1,
+      "n_clusters": 2,
       "ari": 1.0,
       "ami": 1.0,
       "pair_prf": {
@@ -214,9 +229,12 @@
           "ep-2",
           "ep-3",
           "ep-4"
+        ],
+        [
+          "ep-1"
         ]
       ],
-      "n_clusters": 1,
+      "n_clusters": 2,
       "ari": 1.0,
       "ami": 1.0,
       "pair_prf": {
@@ -251,35 +269,27 @@
       "variant": "full_pipeline_llm",
       "clusters": [
         [
+          "ep-2",
           "ep-3",
           "ep-4"
         ],
         [
-          "ep-2"
+          "ep-1"
         ]
       ],
       "n_clusters": 2,
-      "ari": 0.0,
-      "ami": 0.0,
+      "ari": 1.0,
+      "ami": 1.0,
       "pair_prf": {
-        "tp": 1,
+        "tp": 3,
         "fp": 0,
-        "fn": 2,
+        "fn": 0,
         "precision": 1.0,
-        "recall": 0.3333,
-        "f1": 0.5
+        "recall": 1.0,
+        "f1": 1.0
       },
       "false_positive_pairs": [],
-      "false_negative_pairs": [
-        [
-          "ep-2",
-          "ep-3"
-        ],
-        [
-          "ep-2",
-          "ep-4"
-        ]
-      ],
+      "false_negative_pairs": [],
       "edges": [
         [
           "ep-2",
@@ -297,6 +307,7 @@
           0.5564
         ]
       ],
+      "verdict_source": "data/candidates.json",
       "llm_rejected": []
     },
     "rule_fallback_pipeline": {
@@ -306,9 +317,12 @@
           "ep-2",
           "ep-3",
           "ep-4"
+        ],
+        [
+          "ep-1"
         ]
       ],
-      "n_clusters": 1,
+      "n_clusters": 2,
       "ari": 1.0,
       "ami": 1.0,
       "pair_prf": {
@@ -326,6 +340,9 @@
       "variant": "baseline_all_diff",
       "clusters": [
         [
+          "ep-1"
+        ],
+        [
           "ep-2"
         ],
         [
@@ -335,7 +352,7 @@
           "ep-4"
         ]
       ],
-      "n_clusters": 3,
+      "n_clusters": 4,
       "ari": 0.0,
       "ami": 0.0,
       "pair_prf": {
@@ -366,23 +383,37 @@
       "variant": "baseline_all_same",
       "clusters": [
         [
+          "ep-1",
           "ep-2",
           "ep-3",
           "ep-4"
         ]
       ],
       "n_clusters": 1,
-      "ari": 1.0,
-      "ami": 1.0,
+      "ari": 0.0,
+      "ami": 0.0,
       "pair_prf": {
         "tp": 3,
-        "fp": 0,
+        "fp": 3,
         "fn": 0,
-        "precision": 1.0,
+        "precision": 0.5,
         "recall": 1.0,
-        "f1": 1.0
+        "f1": 0.6667
       },
-      "false_positive_pairs": [],
+      "false_positive_pairs": [
+        [
+          "ep-1",
+          "ep-2"
+        ],
+        [
+          "ep-1",
+          "ep-3"
+        ],
+        [
+          "ep-1",
+          "ep-4"
+        ]
+      ],
       "false_negative_pairs": []
     },
     "baseline_keyword_only": {
@@ -392,9 +423,12 @@
           "ep-2",
           "ep-3",
           "ep-4"
+        ],
+        [
+          "ep-1"
         ]
       ],
-      "n_clusters": 1,
+      "n_clusters": 2,
       "ari": 1.0,
       "ami": 1.0,
       "pair_prf": {

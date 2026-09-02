@@ -5,8 +5,10 @@
 
 from __future__ import annotations
 
+import json
 import os
 import sys
+import tempfile
 import unittest
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -176,31 +178,102 @@ class TestAnnotationSensitivity(unittest.TestCase):
         from annotation_sensitivity import derive_pairs
         self.assertEqual(derive_pairs({"a": "s1", "b": "s2"}), set())
 
-    def test_build_labelings_shapes(self):
-        from annotation_sensitivity import build_labelings, RESEARCH_LABEL
-        base = {"ep-WIKI-1": "single-project-analysis", "ep-WIKI-2": "single-mvp-scope",
-                "ep-WIKI-3": RESEARCH_LABEL, "ep-WIKI-4": RESEARCH_LABEL,
-                "ep-WIKI-5": RESEARCH_LABEL, "ep-WIKI-6": "single-research-synthesis",
-                "ep-WIKI-8": "single-prd-review"}
-        ls = build_labelings(base)
-        self.assertEqual(set(ls), {"base", "merge_AGEN6_into_research",
-                                   "merge_AGEN1_into_research",
-                                   "merge_AGEN6_AGEN1_into_research"})
-        self.assertEqual(ls["base"], base)
-        self.assertEqual(ls["merge_AGEN6_into_research"]["ep-WIKI-6"], RESEARCH_LABEL)
-        self.assertEqual(ls["merge_AGEN1_into_research"]["ep-WIKI-1"], RESEARCH_LABEL)
-        self.assertEqual(ls["merge_AGEN6_AGEN1_into_research"]["ep-WIKI-6"], RESEARCH_LABEL)
-        self.assertEqual(ls["merge_AGEN6_AGEN1_into_research"]["ep-WIKI-1"], RESEARCH_LABEL)
+    def test_build_labelings_covers_all_episodes(self):
+        """每个标注必须覆盖全部 episode_ids——下游 truth_labels[eid] 不接受缺失。"""
+        from annotation_sensitivity import build_labelings
+        base = {"ep-2": "research", "ep-3": "research", "ep-4": "research"}
+        ids = ["ep-2", "ep-3", "ep-4"]
+        labelings, notes = build_labelings(base, ids)
+        for lname, labels in labelings.items():
+            self.assertEqual(set(labels), set(ids), f"{lname} 未覆盖全部 episode")
+            self.assertEqual(set(notes), set(labelings), "说明与标注集合应一一对应")
+
+    def test_build_labelings_detaches_every_clustered_episode(self):
+        from annotation_sensitivity import build_labelings
+        base = {"ep-2": "research", "ep-3": "research", "ep-4": "research"}
+        ids = ["ep-2", "ep-3", "ep-4"]
+        labelings, _ = build_labelings(base, ids)
+        self.assertEqual(set(labelings),
+                         {"base", "detach_ep-2", "detach_ep-3", "detach_ep-4"})
+        self.assertEqual(labelings["base"], base)
+        # 剥离后该 episode 自成一类，其余保持原样
+        self.assertNotEqual(labelings["detach_ep-2"]["ep-2"], "research")
+        self.assertEqual(labelings["detach_ep-2"]["ep-3"], "research")
+        self.assertEqual(labelings["detach_ep-2"]["ep-4"], "research")
+
+    def test_build_labelings_skips_singletons(self):
+        """独类 episode 再剥离没有意义，不应产生反事实。"""
+        from annotation_sensitivity import build_labelings
+        base = {"ep-2": "research", "ep-3": "research", "ep-4": "ops"}
+        ids = ["ep-2", "ep-3", "ep-4"]
+        labelings, _ = build_labelings(base, ids)
+        self.assertEqual(set(labelings), {"base", "detach_ep-2", "detach_ep-3"})
+        self.assertNotIn("detach_ep-4", labelings)
 
     def test_counterfactual_only_touches_targets(self):
         from annotation_sensitivity import build_labelings
-        base = {"ep-WIKI-1": "a", "ep-WIKI-2": "b", "ep-WIKI-3": "r", "ep-WIKI-4": "r",
-                "ep-WIKI-5": "r", "ep-WIKI-6": "c", "ep-WIKI-8": "d"}
-        for lname, labels in build_labelings(base).items():
+        base = {"ep-2": "r", "ep-3": "r", "ep-4": "r", "ep-5": "ops"}
+        ids = ["ep-2", "ep-3", "ep-4", "ep-5"]
+        for lname, labels in build_labelings(base, ids)[0].items():
             if lname == "base":
                 continue
-            changed = {k for k in labels if labels[k] != base[k]}
-            self.assertLessEqual(len(changed), 2, f"{lname} 改动应 <=2 个标签")
+            changed = {k for k in labels if labels[k] != base.get(k, k)}
+            self.assertEqual(len(changed), 1, f"{lname} 应只改动被剥离的那一个标签")
+
+
+class TestVerdictsFromCandidates(unittest.TestCase):
+    """复核判定从候选产物派生（取代此前硬编码的过期编号常量）。"""
+
+    def test_cluster_members_become_same_pairs(self):
+        with tempfile.TemporaryDirectory() as d:
+            p = os.path.join(d, "candidates.json")
+            with open(p, "w", encoding="utf-8") as f:
+                json.dump({"candidates": [
+                    {"candidate_id": "c1", "episode_ids": ["ep-2", "ep-3", "ep-4"]},
+                ]}, f)
+            v = ev.verdicts_from_candidates(p)
+        self.assertEqual(v, {("ep-2", "ep-3"): "same",
+                             ("ep-2", "ep-4"): "same",
+                             ("ep-3", "ep-4"): "same"})
+
+    def test_key_is_order_insensitive(self):
+        """键为排序后的无序对，与粗筛边的 (i, j) 顺序解耦。"""
+        with tempfile.TemporaryDirectory() as d:
+            p = os.path.join(d, "candidates.json")
+            with open(p, "w", encoding="utf-8") as f:
+                json.dump({"candidates": [{"episode_ids": ["ep-9", "ep-1"]}]}, f)
+            v = ev.verdicts_from_candidates(p)
+        self.assertIn(("ep-1", "ep-9"), v)
+
+    def test_multiple_clusters_do_not_cross_pair(self):
+        with tempfile.TemporaryDirectory() as d:
+            p = os.path.join(d, "candidates.json")
+            with open(p, "w", encoding="utf-8") as f:
+                json.dump({"candidates": [
+                    {"episode_ids": ["ep-1", "ep-2"]},
+                    {"episode_ids": ["ep-3", "ep-4"]},
+                ]}, f)
+            v = ev.verdicts_from_candidates(p)
+        self.assertEqual(set(v), {("ep-1", "ep-2"), ("ep-3", "ep-4")})
+        self.assertNotIn(("ep-2", "ep-3"), v)
+
+    def test_missing_file_returns_empty(self):
+        self.assertEqual(ev.verdicts_from_candidates(
+            os.path.join(tempfile.gettempdir(), "definitely-not-here.json")), {})
+
+    def test_corrupt_file_returns_empty(self):
+        with tempfile.TemporaryDirectory() as d:
+            p = os.path.join(d, "candidates.json")
+            with open(p, "w", encoding="utf-8") as f:
+                f.write("{ not valid json")
+            self.assertEqual(ev.verdicts_from_candidates(p), {})
+
+    def test_no_candidates_returns_empty(self):
+        with tempfile.TemporaryDirectory() as d:
+            p = os.path.join(d, "candidates.json")
+            with open(p, "w", encoding="utf-8") as f:
+                json.dump({"candidates": []}, f)
+            self.assertEqual(ev.verdicts_from_candidates(p), {})
 
 
 if __name__ == "__main__":
