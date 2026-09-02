@@ -40,7 +40,8 @@
           "Noto Sans CJK SC", sans-serif;
   --mono: "Cascadia Code", Consolas, "JetBrains Mono", "Courier New", monospace;
 
-  /* 间距（4px 基准）/ 圆角（方角：全 0） */
+  /* 间距（4px 基准）/ 圆角（方角：全 0）
+     6px 是事实上的"紧凑步长"令牌（按钮/标签内边距，全站 13 处一致使用），刻意不入 s 刻度 */
   --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 24px; --s6: 36px; --s7: 48px;
   --r-xs: 0; --r-sm: 0; --r-md: 0; --r-lg: 0;
 

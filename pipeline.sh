@@ -32,6 +32,7 @@ print_summary() {
 
 # 阶段 1（commit stage：秒级，语法与风格门禁）
 stage lint      "$PY" -m ruff check .
+stage css-guard "$PY" -m unittest tests.test_css_integrity
 stage js-syntax node --check web/static/app.js
 
 # 阶段 2（单元测试）
