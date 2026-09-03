@@ -147,3 +147,16 @@
 - 边界澄清：390 截图的"右侧裁切"经新旧 CSS A/B 对照确认为 Edge 无头模式视口钳制伪影
   （最小布局宽约 500px），非产品 bug；真机不受影响
 - 验证：pipeline.sh 全绿（含新 css-guard 阶段）/ 211 单测 OK / DoD 5/5
+
+
+## 2026-08-31 14:20 视觉重构·阶段 A（布局骨架：左侧常驻导航栏）
+
+- 参考：Linear 官方 UI 重设计复盘（降噪/对齐/密度）、Pustelto 逆向拆解（传统媒体查询实现）、
+  同类双栏实现 240px 侧栏参照
+- 改动：index.html 重写为 shell 结构（aside.sidebar + main-col{main+footer}）；样式删除旧顶栏，
+  新增侧栏系统（200px、纸质底、发丝右框、图标+文字纵向导航、active=accent-soft 底+左侧
+  2px 墨绿条）；响应式 ≤960px 侧栏折叠为顶栏（品牌左+导航横排），≤720 保留触控/堆叠规则；
+  回滚点：backup/pre-layout-refactor 分支与同名 tag
+- 验证：pipeline.sh 七阶段全绿（lint 1s/css-guard 1s/js 0s/单测 5s/dod/dod-report/前端 500s）；
+  1440 与 800 截图人工复核
+- 下一步：阶段 B 收件箱主从双栏（列表左 380px + 审核卡右，处理完自动前进）

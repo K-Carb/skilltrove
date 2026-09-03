@@ -17,26 +17,34 @@
   <symbol id="i-run" viewBox="0 0 16 16"><path d="M5.5 3.5v9l7-4.5z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></symbol>
 </svg>
 <a class="skip-link" href="#view">跳到内容</a>
-<header>
-  <div class="brand">
-    <span class="brand-dot" aria-hidden="true"></span>
-    <h1>SkillTrove <span>团队 AI 经验库</span></h1>
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="brand-dot" aria-hidden="true"></span>
+      <h1>SkillTrove</h1>
+    </div>
+    <nav aria-label="主导航">
+      <button data-view="overview" class="active"><svg class="nav-ico"><use href="#i-home"/></svg>首页</button>
+      <button data-view="skills"><svg class="nav-ico"><use href="#i-skills"/></svg>技能库</button>
+      <button data-view="inbox"><svg class="nav-ico"><use href="#i-inbox"/></svg>收件箱</button>
+      <button data-view="pipeline"><svg class="nav-ico"><use href="#i-run"/></svg>运行任务</button>
+    </nav>
+    <div class="sidebar-foot">
+      <span class="ver">v0.1.0</span>
+      <span class="foot-note">本地运行 · 数据不出本机</span>
+    </div>
+  </aside>
+  <div class="main-col">
+    <main id="view"></main>
+    <footer>
+      <span>SkillTrove 本地运行</span>
+      <span class="dot">·</span>
+      <span>数据不出本机</span>
+      <span class="dot">·</span>
+      <span>技能库通过 git 与团队共享</span>
+    </footer>
   </div>
-  <nav aria-label="主导航">
-    <button data-view="overview" class="active"><svg class="nav-ico"><use href="#i-home"/></svg>首页</button>
-    <button data-view="skills"><svg class="nav-ico"><use href="#i-skills"/></svg>技能库</button>
-    <button data-view="inbox"><svg class="nav-ico"><use href="#i-inbox"/></svg>收件箱</button>
-    <button data-view="pipeline"><svg class="nav-ico"><use href="#i-run"/></svg>运行任务</button>
-  </nav>
-</header>
-<main id="view"></main>
-<footer>
-  <span>SkillTrove 本地运行</span>
-  <span class="dot">·</span>
-  <span>数据不出本机</span>
-  <span class="dot">·</span>
-  <span>技能库通过 git 与团队共享</span>
-</footer>
+</div>
 <noscript><div class="empty">看板需要 JavaScript 才能展示数据。</div></noscript>
 <div id="toast" role="status" aria-live="polite"></div>
 <script src="/static/app.js"></script>
