@@ -372,28 +372,32 @@ async function renderSkills() {
   draw("");
 }
 
-async function renderSkillDetail(name) {
+async function renderSkillDetail(name, opts = {}) {
+  const pane = opts.pane || $view;
   const d = await api("/api/skills/" + name);
   // 详情页同步深链：任何入口（搜索/收件箱/列表）打开都可分享、可刷新
   history.replaceState(null, "", "#skill/" + encodeURIComponent(name));
-  $view.innerHTML = "";
+  pane.innerHTML = "";
   const head = el("div", "detail-header");
   head.appendChild(el("span", "tag " + d.review_status, cn(STATUS_CN, d.review_status)));
   head.appendChild(el("h2", null, d.name + " v" + d.version));
-  const back = el("button", "action ghost", "← 技能库");
-  back.onclick = () => { history.replaceState(null, "", "#skills"); renderSkills(); };
+  const back = el("button", "action ghost", "← 返回列表");
+  back.onclick = () => {
+    history.replaceState(null, "", "#skills");
+    if (opts.onBack) opts.onBack(); else renderSkills();
+  };
   head.appendChild(back);
   const toRecalls = el("button", "action ghost", "使用记录 →");
   toRecalls.onclick = () => navigate("recalls");
   head.appendChild(toRecalls);
-  $view.appendChild(head);
+  pane.appendChild(head);
 
   // 人类可读要点：一句话说明 + 使用时机 + 影响面
-  if (d.description) $view.appendChild(el("p", "note", d.description));
-  if (d.when_to_use) $view.appendChild(el("p", "note", "什么时候用：" + d.when_to_use));
+  if (d.description) pane.appendChild(el("p", "note", d.description));
+  if (d.when_to_use) pane.appendChild(el("p", "note", "什么时候用：" + d.when_to_use));
   const contrib = d.contributors || {};
   const usage = d.usage || {};
-  $view.appendChild(el("p", "note",
+  pane.appendChild(el("p", "note",
     `由 ${contrib.distinct_agents || 0} 位贡献者的相似经验合并而来` +
     `（${(contrib.agents || []).join("、")}），发布后全团队可用，已被使用 ${usage.applied_count || 0} 次。`));
 
@@ -421,12 +425,12 @@ async function renderSkillDetail(name) {
     reject.onclick = () => doReview(name, "deprecated", reject, d.review_status);
     actions.append(pass, reject);
     box.appendChild(actions);
-    $view.appendChild(box);
+    pane.appendChild(box);
   } else {
-    $view.appendChild(el("div", "section-title", "技能内容"));
+    pane.appendChild(el("div", "section-title", "技能内容"));
     const body = el("div", "md-body");
     body.appendChild(renderMarkdown(d.skill_md));
-    $view.appendChild(body);
+    pane.appendChild(body);
   }
 
   // 技术详情：审核单 / 证据索引 / eval cases / 使用评估（原始数据默认收起）
@@ -448,12 +452,12 @@ async function renderSkillDetail(name) {
     }
   }
   if (techBlocks.length) {
-    $view.appendChild(techDetails("技术详情（审核单、证据与评估数据）", techBlocks));
+    pane.appendChild(techDetails("技术详情（审核单、证据与评估数据）", techBlocks));
   }
 
   // 审核动作提示（M1 审核工作台）
   if (needsReview) {
-    $view.appendChild(el("p", "note",
+    pane.appendChild(el("p", "note",
       "审核动作会直接生效：通过即发布入库；打回即标记废弃。发布后请提交 git 同步给团队。"));
   }
 
@@ -483,7 +487,7 @@ async function renderSkillDetail(name) {
     };
     body.append(ta, submit);
     rep.appendChild(body);
-    $view.appendChild(rep);
+    pane.appendChild(rep);
   }
 }
 
