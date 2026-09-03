@@ -1,6 +1,6 @@
 # SkillTrove
 
-[![CI](https://github.com/USER/skilltrove/actions/workflows/ci.yml/badge.svg)](../../actions)
+[![CI](https://github.com/K-Carb/skilltrove/actions/workflows/ci.yml/badge.svg)](../../actions)
 
 把团队 AI 助手干活的记录，变成全团队可复用的技能。
 

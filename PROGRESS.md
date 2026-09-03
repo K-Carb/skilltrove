@@ -11,7 +11,7 @@
   pydantic 直接依赖声明、.gitattributes 换行策略、CONTRIBUTING/CHANGELOG、
   ADR-0001~0003（无构建前端 / git 事实源 / 可插拔 LLM）、README 安全声明与徽章占位
 - 验证：195 项单测 OK、ruff 0 违规、DoD 5/5、前端验证 PASS
-- 待办：夜间读书计划见 docs/study/reading-plan.md；CI 徽章 URL 中 USER 占位待新账号名
+- 待办：夜间读书计划见 docs/study/reading-plan.md；CI 徽章 URL 占位已填入真实账号名
 
 
 ## 2026-08-31 00:40 轮 1（读书对照：Clean Code Ch2/3/4 命名/函数/注释）
