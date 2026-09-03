@@ -487,14 +487,18 @@ async function renderSkillDetail(name) {
   }
 }
 
+async function postReview(name, status) {
+  return api("/api/review/" + name, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ status }),
+  });
+}
+
 async function doReview(name, status, btn, prevStatus) {
   btn.disabled = true;
   try {
-    await api("/api/review/" + name, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status }),
-    });
+    await postReview(name, status);
     if (status === "published") {
       // 庆祝时刻：第一次发布是团队的里程碑，给明确确认而不是一闪而过的 toast
       await renderSkillDetail(name);
@@ -502,22 +506,14 @@ async function doReview(name, status, btn, prevStatus) {
         "✓ 技能已发布到技能库，全团队现在都能用了。下一步可以把它接到更多任务里用起来。");
       $view.insertBefore(banner, $view.firstChild);
       showToast("已发布", "ok", "撤销", async () => {
-        await api("/api/review/" + name, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ status: prevStatus || "draft" }),
-        });
+        await postReview(name, prevStatus || "draft");
         showToast("已撤销，恢复为 " + cn(STATUS_CN, prevStatus || "draft"), "ok");
         renderSkillDetail(name);
       });
     } else {
       // 打回也可撤销（6 秒内），不再用打断式 confirm
       showToast("已打回，标记为废弃", "err", "撤销", async () => {
-        await api("/api/review/" + name, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ status: prevStatus || "draft" }),
-        });
+        await postReview(name, prevStatus || "draft");
         showToast("已撤销，恢复为 " + cn(STATUS_CN, prevStatus || "draft"), "ok");
         renderSkillDetail(name);
       });
@@ -579,67 +575,146 @@ async function renderInbox() {
   const [reg, cand, iss] = await Promise.all([
     api("/api/registry"), api("/api/candidates"), api("/api/skill-issues"),
   ]);
-  const skills = reg.skills || [];
-  const pending = skills.filter(s => ["draft", "in_review"].includes(s.review_status));
+  const pending = (reg.skills || []).filter(x => ["draft", "in_review"].includes(x.review_status));
   const cands = cand.candidates || [];
-  const issues = (iss.issues || []).filter(i => i.status === "open");
+  const issues = (iss.issues || []).filter(x => x.status === "open");
+
   $view.innerHTML = "";
   $view.appendChild(el("h2", "section-title", "收件箱"));
-  $view.appendChild(el("p", "note", "需要你决定的事都集中在这里：审核新技能、确认发现的重复任务、处理使用中报告的问题。处理完就清空，不用到处找。"));
-  let has = false;
-  if (pending.length) {
-    has = true;
-    $view.appendChild(el("div", "section-title", `待审核技能（${pending.length} 个）`));
-    const list = el("div", "list");
-    for (const s of pending) {
-      const row = el("div", "list-row");
-      const main = el("div", "row-main");
-      main.appendChild(el("div", "row-title", s.name));
-      if (s.description) main.appendChild(el("div", "row-desc", s.description));
-      row.appendChild(main);
-      row.appendChild(el("span", "tag " + s.review_status, cn(STATUS_CN, s.review_status)));
-      const btn = el("button", "action", "去审核");
-      btn.onclick = () => renderSkillDetail(s.name);
-      row.appendChild(btn);
-      list.appendChild(row);
-    }
-    $view.appendChild(list);
-  }
-  if (cands.length) {
-    has = true;
-    $view.appendChild(el("div", "section-title", `待确认的重复任务（${cands.length} 组）`));
-    $view.appendChild(el("p", "note", "系统在团队工作记录里发现的重复工作，确认后可以合并成一份技能。"));
-    for (let i = 0; i < cands.length; i++) {
-      $view.appendChild(candidateCard(cands[i], i));
-    }
-  }
-  if (issues.length) {
-    has = true;
-    $view.appendChild(el("div", "section-title", `技能问题反馈（${issues.length} 条）`));
-    $view.appendChild(el("p", "note", "团队成员在使用技能时报告的问题，处理后可当作修订技能的依据。"));
-    const list = el("div", "list");
-    for (const it of issues) {
-      const row = el("div", "list-row");
-      const main = el("div", "row-main");
-      main.appendChild(el("div", "row-title", it.skill));
-      main.appendChild(el("div", "row-desc", it.text));
-      main.appendChild(el("div", "row-meta", fmtTs(it.ts)));
-      row.appendChild(main);
-      const btn = el("button", "action ghost", "查看技能");
-      btn.onclick = () => renderSkillDetail(it.skill);
-      row.appendChild(btn);
-      list.appendChild(row);
-    }
-    $view.appendChild(list);
-  }
-  if (!has) {
+  $view.appendChild(el("p", "note", "需要你决定的事都集中在这里：选中左侧一条，右侧直接处理，处理完自动到下一条。"));
+
+  const queue = [
+    ...pending.map(x => ({ type: "skill", id: "skill:" + x.name, skill: x })),
+    ...cands.map((x, i) => ({ type: "candidate", id: "cand:" + (x.candidate_id || i), cand: x, idx: i })),
+    ...issues.map(x => ({ type: "issue", id: "issue:" + x.skill + ":" + x.ts, issue: x })),
+  ];
+
+  if (!queue.length) {
     const box = el("div", "empty");
     box.appendChild(el("p", null, "没有需要你处理的事。系统发现新技能或重复任务时，会出现在这里。"));
     const go = el("button", "action", "去运行任务发现经验 →");
     go.onclick = () => navigate("pipeline");
     box.appendChild(go);
     $view.appendChild(box);
+    return;
   }
+
+  const state = { handled: new Set(), current: null };
+
+  const layout = el("div", "inbox-layout");
+  const listPane = el("div", "inbox-list");
+  const detailPane = el("div", "inbox-detail");
+  layout.append(listPane, detailPane);
+  $view.appendChild(layout);
+
+  const qTypeLabel = { skill: "技能审核", candidate: "重复任务", issue: "问题反馈" };
+
+  function rowFor(item) {
+    const row = el("button", "queue-row" + (state.current === item.id ? " selected" : ""));
+    row.type = "button";
+    const title = el("div", "q-title");
+    title.appendChild(el("span", "q-type", qTypeLabel[item.type]));
+    row.appendChild(title);
+    if (item.type === "skill") {
+      title.appendChild(el("span", null, item.skill.name));
+      if (item.skill.description) row.appendChild(el("div", "q-sub", item.skill.description));
+    } else if (item.type === "candidate") {
+      const topic = (item.cand.episodes || [])[0];
+      title.appendChild(el("span", null, (topic && topic.goal) || "重复任务组 " + (item.idx + 1)));
+      row.appendChild(el("div", "q-sub",
+        ((item.cand.episodes || []).length) + " 个人或 AI 助手做过高度相似的工作"));
+    } else {
+      title.appendChild(el("span", null, item.issue.skill));
+      row.appendChild(el("div", "q-sub", item.issue.text));
+    }
+    row.onclick = () => { state.current = item.id; renderQueue(); renderDetail(item); };
+    return row;
+  }
+
+  function renderQueue() {
+    listPane.innerHTML = "";
+    const rest = queue.filter(x => !state.handled.has(x.id));
+    const head = el("div", "inbox-list-head", rest.length ? "待处理（" + rest.length + "）" : "已全部处理");
+    listPane.appendChild(head);
+    for (const item of rest) listPane.appendChild(rowFor(item));
+  }
+
+  function renderDetail(item) {
+    detailPane.innerHTML = "";
+    const head = el("div", "q-detail-head");
+    head.appendChild(el("span", "tag " + (item.type === "skill" ? item.skill.review_status : "mut"),
+      item.type === "skill" ? cn(STATUS_CN, item.skill.review_status) : qTypeLabel[item.type]));
+    detailPane.appendChild(head);
+
+    if (item.type === "skill") {
+      const sk = item.skill;
+      detailPane.appendChild(el("h3", "q-detail-title", sk.name + " v" + sk.version));
+      if (sk.description) detailPane.appendChild(el("p", "q-detail-note", sk.description));
+      const box = el("div", "card review-card");
+      box.appendChild(el("p", null, "由 " + ((sk.contributors || {}).distinct_agents || 0) +
+        " 位贡献者的相似经验合并而来。确认做法正确、步骤可复现，就通过；有问题就打回。"));
+      const body = el("div", "md-body");
+      box.appendChild(body);
+      const actions = el("div", "review-actions");
+      const pass = el("button", "action big", "✓ 通过，发布到共享库");
+      const reject = el("button", "action big ghost danger", "✗ 打回，标记废弃");
+      const busy = b => { pass.disabled = b; reject.disabled = b; };
+      pass.onclick = () => inboxReview(sk.name, "published", sk.review_status, busy);
+      reject.onclick = () => inboxReview(sk.name, "deprecated", sk.review_status, busy);
+      actions.append(pass, reject);
+      box.appendChild(actions);
+      detailPane.appendChild(box);
+      api("/api/skills/" + encodeURIComponent(sk.name))
+        .then(d => { body.appendChild(renderMarkdown(d.skill_md || "")); })
+        .catch(() => { body.appendChild(el("p", "md-p", "技能内容加载失败，可前往技能库查看。")); });
+    } else if (item.type === "candidate") {
+      detailPane.appendChild(candidateCard(item.cand, item.idx));
+    } else {
+      const box = el("div", "card");
+      box.appendChild(el("h3", "q-detail-title", item.issue.skill));
+      box.appendChild(el("p", "md-p", item.issue.text));
+      box.appendChild(el("p", "q-detail-note", "反馈时间：" + fmtTs(item.issue.ts)));
+      const go = el("button", "action", "打开技能页处理 →");
+      go.onclick = () => renderSkillDetail(item.issue.skill);
+      box.appendChild(go);
+      detailPane.appendChild(box);
+    }
+  }
+
+  async function inboxReview(name, status, prevStatus, busy) {
+    busy(true);
+    try {
+      await postReview(name, status);
+      showToast(status === "published" ? "已发布" : "已打回", status === "published" ? "ok" : "err",
+        "撤销", async () => {
+          await postReview(name, prevStatus || "draft");
+          state.handled.delete("skill:" + name);
+          renderQueue();
+          showToast("已撤销，恢复为 " + cn(STATUS_CN, prevStatus || "draft"), "ok");
+        });
+      state.handled.add("skill:" + name);
+      advance();
+    } catch (e) {
+      busy(false);
+      showToast("审核失败: " + e.message, "err");
+    }
+  }
+
+  function advance() {
+    renderQueue();
+    const rest = queue.filter(x => !state.handled.has(x.id));
+    if (!rest.length) {
+      detailPane.innerHTML = "";
+      detailPane.appendChild(el("div", "celebrate", "✓ 全部处理完毕。系统有新发现时会再回到这里。"));
+      return;
+    }
+    state.current = rest[0].id;
+    renderQueue();
+    renderDetail(rest[0]);
+  }
+
+  renderQueue();
+  advance();
 }
 
 async function renderCandidates() {

@@ -586,3 +586,34 @@ details.issue .detail-body .action { margin-top: var(--s2); }
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ---------- 收件箱主从双栏（≥1100px；窄屏单列） ---------- */
+.inbox-layout { display: grid; grid-template-columns: 380px minmax(0, 1fr); gap: var(--s4); align-items: start; }
+.inbox-list { background: var(--surface); border: 1px solid var(--line); }
+.inbox-list-head {
+  padding: 8px var(--s3); font-size: 12px; font-weight: 600; color: var(--ink-3);
+  letter-spacing: 0.04em; border-bottom: 1px solid var(--line); background: var(--surface-2);
+}
+.queue-row {
+  display: flex; flex-direction: column; gap: 3px; width: 100%;
+  text-align: left; padding: 10px var(--s3);
+  background: transparent; border: none; border-bottom: 1px solid var(--line);
+  cursor: pointer; font-family: inherit;
+  transition: background var(--transition);
+}
+.queue-row:hover { background: var(--surface-2); }
+.queue-row.selected { background: var(--accent-soft); box-shadow: inset 2px 0 0 var(--accent); }
+.queue-row .q-title { font-size: 13px; font-weight: 600; color: var(--ink); display: flex; gap: var(--s2); align-items: center; }
+.queue-row .q-type { font-size: 12px; font-weight: 600; color: var(--ink-3); }
+.queue-row .q-sub {
+  font-size: 12px; color: var(--ink-3);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.inbox-detail { position: sticky; top: var(--s4); min-height: 320px; }
+.q-detail-head { margin-bottom: var(--s2); }
+.q-detail-title { font-size: 16px; font-weight: 600; margin: 0 0 var(--s2); color: var(--ink); }
+.q-detail-note { font-size: 12px; color: var(--ink-3); }
+@media (max-width: 1100px) {
+  .inbox-layout { grid-template-columns: 1fr; }
+  .inbox-detail { position: static; }
+}
