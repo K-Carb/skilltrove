@@ -625,3 +625,9 @@ details.issue .detail-body .action { margin-top: var(--s2); }
 .list-row.selected { background: var(--accent-soft); box-shadow: inset 2px 0 0 var(--accent); }
 .list-row[style*="cursor"] { transition: background var(--transition); }
 .list-row[style*="cursor"]:hover { background: var(--surface-2); }
+
+/* ---------- 运行任务工作台分栏（≥960px） ---------- */
+.run-layout { display: grid; grid-template-columns: 340px minmax(0, 1fr); gap: var(--s4); align-items: start; }
+.run-col-left, .run-col-right { display: flex; flex-direction: column; gap: var(--s4); min-width: 0; }
+.pipeline-log { max-height: 60vh; }
+@media (max-width: 960px) { .run-layout { grid-template-columns: 1fr; } }

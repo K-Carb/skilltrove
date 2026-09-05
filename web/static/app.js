@@ -877,12 +877,18 @@ async function renderPipeline() {
   $view.appendChild(el("p", "note", "选择一份团队工作记录作为数据源，点“一键发现重复任务”，系统会自动完成读取、评估、发现与起草，不需要其他操作。"));
 
   // ① 数据源选择
+  // 工作台分栏（≥960px）：左=控制（数据源/高级设置/启动），右=监控（日志/历史）
+  const pipelineCols = { left: el("div", "run-col-left"), right: el("div", "run-col-right") };
+  const runLayout = el("div", "run-layout");
+  runLayout.append(pipelineCols.left, pipelineCols.right);
+  $view.appendChild(runLayout);
+
   const srcCard = el("div", "card");
   srcCard.appendChild(el("h3", null, "① 数据源"));
   const srcBox = el("div", "pipeline-sources");
   srcBox.appendChild(el("div", "empty", "加载中…"));
   srcCard.appendChild(srcBox);
-  $view.appendChild(srcCard);
+  pipelineCols.left.append(srcCard);
   try {
     const d = await api("/api/sources");
     srcBox.innerHTML = "";
@@ -933,7 +939,7 @@ async function renderPipeline() {
   );
   advBody.appendChild(cfgRow);
   adv.appendChild(advBody);
-  $view.appendChild(adv);
+  pipelineCols.left.append(adv);
 
   // ③ 运行
   const runCard = el("div", "card");
@@ -991,7 +997,7 @@ async function renderPipeline() {
         " 安装对应命令行工具（如 kimi）到 PATH，或在上方高级设置里更换。"));
     }
   }).catch(() => { llmLine.textContent = ""; });
-  $view.appendChild(runCard);
+  pipelineCols.left.append(runCard);
 
   // ④ 当前运行：步骤条 + 日志 + 完成后跳转
   const runCard2 = el("div", "card");
@@ -1007,14 +1013,14 @@ async function renderPipeline() {
   runCard2.appendChild(pipelineState.logBox);
   pipelineState.jumps = el("div", "pipeline-jumps");
   runCard2.appendChild(pipelineState.jumps);
-  $view.appendChild(runCard2);
+  pipelineCols.right.append(runCard2);
 
   // ⑤ 运行历史
   const histCard = el("div", "card");
   histCard.appendChild(el("h3", null, "④ 运行历史"));
   const histBox = el("div", null);
   histCard.appendChild(histBox);
-  $view.appendChild(histCard);
+  pipelineCols.right.append(histCard);
   const renderHist = async () => {
     try {
       const d = await api("/api/pipeline/runs");
