@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import importlib.util
 import os
 import socket
@@ -39,6 +40,17 @@ def main() -> int:
     for name in ("registry/registry.json", "archive/facts.json", "archive/episodes.jsonl",
                  "archive/manifest.json", "archive/scored.jsonl", "data/candidates.json"):
         check(f"产物 {name}", os.path.isfile(os.path.join(ROOT, name)))
+
+    # JSON 可解析（损坏早发现；runbook 第 4 条的前置排查也依赖这里）
+    for name in ("registry/registry.json", "data/candidates.json",
+                 "data/skill-issues.json", "archive/facts.json"):
+        p = os.path.join(ROOT, name)
+        if os.path.isfile(p):
+            try:
+                json.load(open(p, encoding="utf-8"))
+                check(f"JSON 可解析 {name}", True, "")
+            except ValueError as e:
+                check(f"JSON 可解析 {name}", False, str(e)[:100])
 
     # 共享库
     skills_root = os.path.join(ROOT, "skills")

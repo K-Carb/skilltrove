@@ -96,5 +96,15 @@
     移动端 nav/按钮/输入 min-height 40px
   - 遗留（下一轮 10b 继续）：字号刻度与间距节奏全面审计、信息密度审视
 - [ ] 10b. 前端专项 2：字号刻度/间距节奏/信息密度全面审计（Refactoring UI 层级章节）
-- [ ] 11. Well-Architected 可靠性支柱 —— 数据备份/恢复演练：registry 损坏时的降级与恢复路径
-- [ ] 12. Well-Architected 运维卓越支柱 —— 常见故障 playbook 写入 docs/runbook.md
+- [x] 11. Well-Architected 可靠性支柱 —— 数据备份/恢复演练：registry 损坏时的降级与恢复路径
+  - 提炼的可核查标准（2026-09-05 轮 12）：
+    a) 唯一事实源的写入必须原子化（写一半中断不得损坏）
+    b) 损坏可检测：自检必须包含 JSON 可解析校验
+    c) 恢复路径文档化且与代码一致（runbook 第 4 条）
+  - 本轮发现并修复：runbook 第 4 条写着"publish 走原子写并留 .bak"，代码里并未实现——
+    文档与代码不一致。已落地 save_registry 原子写（临时文件 + os.replace + .bak）；
+    check.py 新增 5 项 JSON 可解析自检（10/10 → 15/15）
+- [x] 12. Well-Architected 运维卓越支柱 —— 常见故障 playbook 写入 docs/runbook.md
+  - 核验（2026-09-05 轮 12）：docs/runbook.md 已由并行会话完成——10 个故障 playbook
+    （症状→原因→处置），含 registry 损坏恢复、无头验证失败、.bat 乱码等；
+    质量合格，本轮补齐了其中引用但缺失的原子写实现，条目闭环

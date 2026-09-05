@@ -103,9 +103,19 @@ def load_registry(path: str) -> dict:
 
 
 def save_registry(registry: dict, path: str) -> None:
+    """原子写：先落临时文件再 os.replace，写一半中断不会损坏唯一事实源。
+
+    替换前把旧内容留一份 .bak（runbook 第 4 条的恢复依据）。"""
+    import os
+    import shutil
+
     os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
-    with open(path, "w", encoding="utf-8") as f:
+    tmp = path + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
         json.dump(registry, f, ensure_ascii=False, indent=2)
+    if os.path.exists(path):
+        shutil.copyfile(path, path + ".bak")
+    os.replace(tmp, path)
 
 
 # ---------------------------------------------------------------------------
