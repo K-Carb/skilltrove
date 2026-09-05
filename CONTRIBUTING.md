@@ -3,7 +3,8 @@
 ## 开发环境
 
 ```bat
-install.bat      rem 或手动：python -m venv .venv && .venv\Scripts\pip install -r requirements-web.txt
+install.bat      rem 或手动：python -m venv .venv && .venv\Scripts\pip install -r requirements-dev.txt
+                 rem （requirements-dev.txt 含 web 依赖 + 开发/测试依赖：httpx/ruff/coverage）
 start.bat        rem 启动看板 http://127.0.0.1:8000
 ```
 

@@ -139,11 +139,11 @@ class WebApiTests(unittest.TestCase):
             reg = json.load(open(os.path.join(td, "registry.json"), encoding="utf-8"))
             self.assertEqual(reg["skills"][0]["review_status"], "deprecated")
 
-    def test_review_rejects_illegal_transition(self):
-        # 状态机：draft -> in_review -> published -> deprecated；published 不能回到 in_review
+    def test_review_unknown_status_400(self):
+        # 未知状态仍拒绝；合法状态（含回退边）全连通
         with tempfile.TemporaryDirectory() as td, self._patched_registry(td):
             self.assertEqual(
-                self.client.post("/api/review/implementation-research", json={"status": "in_review"}).status_code,
+                self.client.post("/api/review/implementation-research", json={"status": "nope"}).status_code,
                 400)
 
     def test_review_rejects_bad_status(self):

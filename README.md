@@ -18,12 +18,15 @@ skilltrove.bat   rem 一键：建 venv + 装依赖 + 自检 + 启动看板 + 开
 
 或分步：
 
-```bash
+```bat
+:: Windows（cmd）
 python -m venv .venv
-.venv/Scripts/python -m pip install -r requirements-web.txt
-.venv/Scripts/python check.py --web
-.venv/Scripts/python web/app.py     # 打开 http://127.0.0.1:8000
+.venv\Scripts\python -m pip install -r requirements-web.txt
+.venv\Scripts\python check.py --web
+.venv\Scripts\python webpp.py     rem 打开 http://127.0.0.1:8000
 ```
+
+macOS / Linux 把 `.venv\Scripts\` 换成 `.venv/bin/`（`python` → `python3` 视环境而定）。
 
 看板首次打开自带一套演示数据（虚构团队 TeamWiki 的 5 条工作记录），跟着首页 5 步向导走一遍即可理解全流程。
 

@@ -63,15 +63,16 @@ class TestSetStatus(unittest.TestCase):
         registry.set_status(r, "demo-skill", "published")  # 不抛错
         self.assertEqual(r["skills"][0]["review_status"], "published")
 
-    def test_illegal_backward(self):
+    def test_reversible_transitions(self):
+        # 撤销/反悔是产品行为：状态图全连通（含回退边）
         r = make_registry(make_entry(status="published"))
-        with self.assertRaises(ValueError):
-            registry.set_status(r, "demo-skill", "draft")
-
-    def test_illegal_skip(self):
-        r = make_registry(make_entry(status="draft"))
-        with self.assertRaises(ValueError):
-            registry.set_status(r, "demo-skill", "published")  # 跳过 in_review
+        registry.set_status(r, "demo-skill", "draft")  # 发布后撤销 → 回草稿
+        self.assertEqual(r["skills"][0]["review_status"], "draft")
+        registry.set_status(r, "demo-skill", "published")  # 草稿可直接发布
+        self.assertEqual(r["skills"][0]["review_status"], "published")
+        registry.set_status(r, "demo-skill", "deprecated")  # 打回
+        registry.set_status(r, "demo-skill", "published")  # 撤销打回 → 恢复发布
+        self.assertEqual(r["skills"][0]["review_status"], "published")
 
     def test_unknown_status(self):
         r = make_registry(make_entry())
@@ -82,10 +83,11 @@ class TestSetStatus(unittest.TestCase):
         with self.assertRaises(ValueError):
             registry.set_status(make_registry(), "nope", "published")
 
-    def test_failed_migration_does_not_mutate(self):
+    def test_unknown_status_does_not_mutate(self):
+        # 失败迁移不产生副作用：非法状态被拒后，registry 保持原样
         r = make_registry(make_entry(status="draft"))
         with self.assertRaises(ValueError):
-            registry.set_status(r, "demo-skill", "published")
+            registry.set_status(r, "demo-skill", "weird")
         self.assertEqual(r["skills"][0]["review_status"], "draft")
 
 

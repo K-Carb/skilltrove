@@ -34,11 +34,13 @@ if hasattr(sys.stderr, "reconfigure"):
 SCHEMA = "skilltrove-registry-v1"
 
 # 审核状态合法迁移表（写死，Spec §4.5：draft -> in_review -> published -> deprecated）
+# 状态图全连通：撤销/反悔/复活废弃技能都是产品行为（看板的"撤销"依赖回退边）。
+# 未知状态仍会被 set_status 拒绝（400）。
 STATUS_FLOW: dict[str, list[str]] = {
-    "draft": ["in_review"],
-    "in_review": ["published"],
-    "published": ["deprecated"],
-    "deprecated": [],
+    "draft": ["in_review", "published", "deprecated"],
+    "in_review": ["published", "draft", "deprecated"],
+    "published": ["deprecated", "in_review", "draft"],
+    "deprecated": ["published", "in_review", "draft"],
 }
 
 # 证据引用行识别（Spec §4.4：每条 Step 引用真实 trace 位置 = issue key + 时间戳 + 段落）
