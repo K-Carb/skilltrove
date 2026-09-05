@@ -617,3 +617,11 @@ details.issue .detail-body .action { margin-top: var(--s2); }
   .inbox-layout { grid-template-columns: 1fr; }
   .inbox-detail { position: static; }
 }
+
+/* ---------- 技能库双栏（≥1100px） ---------- */
+.lib-layout { display: grid; grid-template-columns: 360px minmax(0, 1fr); gap: var(--s4); align-items: start; }
+.lib-list-pane { min-width: 0; }
+.lib-detail-pane { position: sticky; top: var(--s4); min-width: 0; }
+.list-row.selected { background: var(--accent-soft); box-shadow: inset 2px 0 0 var(--accent); }
+.list-row[style*="cursor"] { transition: background var(--transition); }
+.list-row[style*="cursor"]:hover { background: var(--surface-2); }

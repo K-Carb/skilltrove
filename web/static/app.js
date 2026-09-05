@@ -326,31 +326,40 @@ async function renderSkills() {
   $view.appendChild(el("h2", "section-title", `共享技能库（${skills.length} 个）`));
   if (!skills.length) {
     const box = el("div", "empty");
-    box.appendChild(el("p", null, "还没有技能。"));
+    box.appendChild(el("p", null, "还没有沉淀任何技能。"));
     const go = el("button", "action", "去运行任务发现经验 →");
     go.onclick = () => navigate("pipeline");
     box.appendChild(go);
     $view.appendChild(box);
     return;
   }
-  // 搜索：命中名字 / 中文说明 / 适用场景（when_to_use）
+
+  // ≥1100px：搜索结果列表 + 右侧技能页双栏；窄屏：点行进整页详情（原有行为）
+  const wide = window.matchMedia("(min-width: 1100px)").matches;
   const search = el("input", "search-box");
   search.type = "text";
   search.placeholder = "搜索技能：名字、用途、适用场景…";
   search.setAttribute("aria-label", "搜索技能");
-  const listBox = el("div", null);
+  const listBox = el("div");
+
+  let detailPane = null;
+  if (wide) {
+    detailPane = el("div", "lib-detail-pane");
+    detailPane.appendChild(el("div", "empty", "从左侧选择一个技能查看。"));
+  }
+
   const draw = q => {
     listBox.innerHTML = "";
     const f = !q ? skills : skills.filter(s =>
       [s.name, s.description, s.when_to_use].some(t => (t || "").toLowerCase().includes(q)));
     if (!f.length) {
-      const box = el("div", "empty", "没有匹配的技能。换个词试试，或去运行新的一次发现。");
-      listBox.appendChild(box);
+      listBox.appendChild(el("div", "empty", "没有匹配的技能。换个词试试，或去运行新的一次发现。"));
       return;
     }
     const list = el("div", "list");
     for (const s of f) {
       const row = el("div", "list-row");
+      row.style.cursor = "pointer";
       const main = el("div", "row-main");
       main.appendChild(el("div", "row-title", s.name));
       if (s.description) main.appendChild(el("div", "row-desc", s.description));
@@ -360,16 +369,43 @@ async function renderSkills() {
         `v${s.version} · 贡献者 ${contrib.distinct_agents || 0} 人 · 使用 ${usage.applied_count || 0} 次`));
       row.appendChild(main);
       row.appendChild(el("span", "tag " + s.review_status, cn(STATUS_CN, s.review_status)));
-      const btn = el("button", "action", "详情");
-      btn.onclick = () => renderSkillDetail(s.name);
-      row.appendChild(btn);
+      const open = () => {
+        if (wide) {
+          listBox.querySelectorAll(".list-row").forEach(x => x.classList.remove("selected"));
+          row.classList.add("selected");
+          renderSkillDetail(s.name, { pane: detailPane, onBack: () => draw(search.value.trim().toLowerCase()) });
+        } else {
+          renderSkillDetail(s.name);
+        }
+      };
+      row.onclick = open;
+      if (!wide) {
+        const btn = el("button", "action", "详情");
+        btn.onclick = open;
+        row.appendChild(btn);
+      }
       list.appendChild(row);
     }
     listBox.appendChild(list);
   };
+
   search.oninput = () => draw(search.value.trim().toLowerCase());
-  $view.append(search, listBox);
+
+  if (wide) {
+    const layout = el("div", "lib-layout");
+    const listPane = el("div", "lib-list-pane");
+    listPane.append(search, listBox);
+    layout.append(listPane, detailPane);
+    $view.appendChild(layout);
+  } else {
+    $view.append(search, listBox);
+  }
   draw("");
+  if (wide && skills.length) {
+    // 主从双栏惯例：初始自动选中第一条，右侧立即可读
+    const firstRow = listBox.querySelector(".list-row");
+    if (firstRow) firstRow.click();
+  }
 }
 
 async function renderSkillDetail(name, opts = {}) {
