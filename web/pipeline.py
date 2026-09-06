@@ -28,7 +28,7 @@ MAX_LOG_LINES = 500
 DEFAULT_SOURCES_DIRS = [os.path.join(ROOT, "examples", "sources")]
 SOURCES_DIRS = [p for p in os.environ.get("SKILLTROVE_SOURCES_DIR", "").split(";") if p] or DEFAULT_SOURCES_DIRS
 
-ADAPTER_CHOICES = ("auto", "log-export", "task-dirs", "table", "session-logs", "git-repo", "docs")
+ADAPTER_CHOICES = ("auto", "log-export", "task-dirs", "table", "session-logs", "git-repo", "docs", "git-records", "github")
 
 
 def _job_timeout() -> int:

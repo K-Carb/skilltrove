@@ -56,12 +56,17 @@ def score_episode(ep: dict, manifest_keys: set[str]) -> dict:
     id 须在 manifest（归一化任务清单）中存在且有 measured_at。
     """
     jk = ep.get("business_join_key") or {}
-    join_verified = bool(
-        jk.get("table")
-        and jk.get("id")
-        and jk.get("id") in manifest_keys
-        and jk.get("measured_at")
-    )
+    # 查证器分派：来源侧已在采集时验证的（GitHub state=closed / 成员导出确认）
+    # 直接采信；其余走 manifest 表查证（issue_status_history）。
+    if jk.get("verified_at_source"):
+        join_verified = True
+    else:
+        join_verified = bool(
+            jk.get("table")
+            and jk.get("id")
+            and jk.get("id") in manifest_keys
+            and jk.get("measured_at")
+        )
     status = (ep.get("status") or "").lower()
     done = status in {"done", "in_review"}
     output = _has_output(ep)

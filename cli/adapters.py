@@ -883,6 +883,131 @@ class DocsAdapter(SourceAdapter):
 # 注册表 + 自动判定 + 统一出口
 # ---------------------------------------------------------------------------
 
+
+
+# ---------------------------------------------------------------------------
+# 7) git-records：团队记录库（分片 episodes-<成员>.jsonl，ADR-0004 Model 1）
+# ---------------------------------------------------------------------------
+
+class GitRecordsAdapter(SourceAdapter):
+    """读取共享记录仓库的工作副本：records/episodes-<成员>.jsonl 拼接。
+
+    分片内容是成员本机已 normalize + 脱敏 + 质量闸门的完整 episode，
+    因此 to_episode 为受控透传（normalize_episode 的 setdefault 不会改写已有字段）。
+    """
+
+    provider = "git-records"
+    channels = ["git-records"]
+    shape = "git-records"
+
+    def detect(self, source: str) -> bool:
+        rd = os.path.join(source, "records")
+        if not os.path.isdir(rd):
+            return False
+        return any(n.startswith("episodes-") and n.endswith(".jsonl") for n in os.listdir(rd))
+
+    def discover(self, source: str) -> list[dict]:
+        rd = os.path.join(source, "records")
+        tasks = []
+        for n in sorted(os.listdir(rd)):
+            if not (n.startswith("episodes-") and n.endswith(".jsonl")):
+                continue
+            with open(os.path.join(rd, n), encoding="utf-8") as f:
+                for line in f:
+                    if not line.strip():
+                        continue
+                    ep = json.loads(line)
+                    tasks.append({"id": ep.get("episode_id") or n, "loc": n, "raw": ep})
+        return tasks
+
+    def to_episode(self, source: str, task: dict) -> dict:
+        ep = dict(task["raw"])
+        ep["provider"] = self.provider
+        return ep
+
+
+# ---------------------------------------------------------------------------
+# 8) github：org/仓库的 Issues 直连（ADR-0004 Model 2，REST API + token）
+# ---------------------------------------------------------------------------
+
+class GitHubAdapter(SourceAdapter):
+    """数据源写法：gh:owner/repo（如 gh:acme/wiki）。
+
+    discover 经 REST API 拉取全量 issues（含正文，排除 PR），
+    to_episode 翻译为标准 episode；完成态在来源侧即已验证（state=closed）。
+    """
+
+    provider = "github"
+    channels = ["github"]
+    shape = "github"
+
+    def detect(self, source: str) -> bool:
+        return source.startswith("gh:")
+
+    def discover(self, source: str) -> list[dict]:
+        owner_repo = source[3:]
+        issues = fetch_issues(owner_repo, token=os.environ.get("GITHUB_TOKEN"))
+        return [{"id": f"{owner_repo}#{i['number']}", "loc": i.get("updated_at") or "",
+                 "raw": i} for i in issues]
+
+    def to_episode(self, source: str, task: dict) -> dict:
+        return github_issue_to_episode(source[3:], task["raw"])
+
+
+def github_issue_to_episode(repo: str, issue: dict, comments: list[dict] | None = None) -> dict:
+    """GitHub issue JSON -> 标准 episode（纯函数，学习测试钉住契约）。"""
+    number = issue.get("number")
+    return {
+        "episode_id": f"gh-{repo.replace('/', '-')}-{number}",
+        "issue_key": f"{repo}#{number}",
+        "issue_id": f"{repo}#{number}",
+        "title": (issue.get("title") or "").strip(),
+        "status": status_normalize(issue.get("state") or ""),
+        "goal": (issue.get("body") or "").strip()[:2000],
+        "agent_ids": [(issue.get("user") or {}).get("login") or "unknown"],
+        "main_agent": (issue.get("user") or {}).get("login") or "unknown",
+        "comments": [{"ts": c.get("created_at"), "agent": (c.get("user") or {}).get("login") or "unknown",
+                      "text": (c.get("body") or "")[:1000]} for c in (comments or [])],
+        "attachments": [],
+        "business_join_key": {
+            "table": "github_issues",
+            "id": f"{repo}#{number}",
+            "measured_at": issue.get("closed_at") or issue.get("updated_at"),
+            "verified_at_source": issue.get("state") == "closed",
+        },
+    }
+
+
+def fetch_issues(owner_repo: str, token: str | None = None,
+                 base_url: str = "https://api.github.com") -> list[dict]:
+    """拉取仓库全部 issues（含正文，排除 PR；分页遍历）。"""
+    import urllib.error
+    import urllib.request
+
+    headers = {"Accept": "application/vnd.github+json", "User-Agent": "skilltrove"}
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    owner, repo = owner_repo.split("/", 1)
+    issues: list[dict] = []
+    page = 1
+    while True:
+        url = f"{base_url}/repos/{owner}/{repo}/issues?state=all&per_page=100&page={page}"
+        req = urllib.request.Request(url, headers=headers)
+        try:
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                batch = json.load(resp)
+        except urllib.error.HTTPError as e:
+            raise RuntimeError(f"GitHub API HTTP {e.code}: {e.read()[:200]}") from e
+        if not isinstance(batch, list):
+            break
+        issues.extend(i for i in batch if isinstance(i, dict) and "pull_request" not in i)
+        if len(batch) < 100:
+            break
+        page += 1
+    return issues
+
+
+
 ADAPTERS: list[SourceAdapter] = [
     LogExportAdapter(),       # MANIFEST.json 特征明确，优先
     TaskDirsAdapter(),
@@ -890,6 +1015,8 @@ ADAPTERS: list[SourceAdapter] = [
     GitRepoAdapter(),
     TableAdapter(),
     DocsAdapter(),
+    GitRecordsAdapter(),
+    GitHubAdapter(),
 ]
 
 

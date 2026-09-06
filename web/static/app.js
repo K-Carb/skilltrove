@@ -37,6 +37,7 @@ const METRIC_NOTE = {
 const ADAPTER_CN = {
   "table": "数据表", "git-repo": "Git 仓库", "log-export": "日志导出包",
   "task-dirs": "任务文件夹", "session-logs": "会话记录", "docs": "文档", "auto": "自动识别",
+  "git-records": "团队记录库", "github": "GitHub 任务",
 };
 
 function cn(map, key, fallback) { return (map[key] || fallback || key); }

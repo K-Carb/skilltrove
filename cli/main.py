@@ -22,6 +22,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from cli import cluster as cluster_mod # noqa: E402
 from cli import draft as draft_mod     # noqa: E402
 from cli import export as export_mod   # noqa: E402
+from cli import records as records_mod  # noqa: E402
 from cli import registry as registry_mod # noqa: E402
 from cli import score as score_mod     # noqa: E402
 from cli import sync as sync_mod       # noqa: E402
@@ -41,7 +42,7 @@ def build_parser() -> argparse.ArgumentParser:
     pe.add_argument("--out", default="archive", help="输出目录（默认 archive/）")
     pe.add_argument("--exclude-agents", default="", help="排除 agent 列表（逗号分隔；默认空。Q8：alice 在本批数据为真实执行者，不默认排除）")
     pe.add_argument("--adapter", default="auto",
-                    help="数据源形态（auto/log-export/task-dirs/table/session-logs/git-repo/docs）")
+                    help="数据源形态（auto/log-export/task-dirs/table/session-logs/git-repo/docs/git-records/github）")
 
     ps = sub.add_parser("score", help="F1.6 L2 打分：join 可查证 + 完成态偏差规则")
     ps.add_argument("--episodes", required=True, help="episodes.jsonl 路径")
@@ -80,6 +81,23 @@ def build_parser() -> argparse.ArgumentParser:
     prc.add_argument("--permission-mode", default=None, help="传给 claude 的 --permission-mode（如 acceptEdits）")
     pv = sub.add_parser("dod-verify", help="IMP-6 DoD 端到端验收（核对六步产物）")
     pv.add_argument("--root", default=".", help="skilltrove/ 根目录")
+
+    pscan = sub.add_parser("scan", help="扫描本机可用的记录来源并报告四要素覆盖率（探测报告）")
+    pscan.add_argument("--dir", action="append", default=[],
+                       help="额外扫描目录（可重复；默认扫已知 AI 助手会话位置）")
+    pscan.add_argument("--profile", default=os.path.join("data", "member-profile.json"))
+
+    pep = sub.add_parser("export-push", help="M1：导出 + 脱敏 + 质量闸门 + 推送到团队记录库")
+    pep.add_argument("--source", required=True, help="本地记录来源（适配器自动识别）")
+    pep.add_argument("--remote", required=True, help="团队记录仓库（git 地址或本地路径）")
+    pep.add_argument("--member", required=True, help="成员 ID（分片文件名，仅字母数字._-）")
+    pep.add_argument("--yes", action="store_true", help="跳过逐条确认（仍打印完整推送报告）")
+    pep.add_argument("--limit", type=int, default=50, help="单次推送条数上限")
+    pep.add_argument("--profile", default=os.path.join("data", "member-profile.json"))
+
+    psr = sub.add_parser("sync-records", help="M2：拉取团队记录库到本地缓存（作为发现的数据源）")
+    psr.add_argument("--remote", required=True)
+    psr.add_argument("--out", default=os.path.join("data", "records-cache"))
     return p
 
 
@@ -104,6 +122,12 @@ def main() -> int:
         return sync_mod.run(args)
     if step == "dod-verify":
         return verify_mod.run(args)
+    if step == "scan":
+        return records_mod.cmd_scan(args)
+    if step == "export-push":
+        return records_mod.cmd_export_push(args)
+    if step == "sync-records":
+        return records_mod.cmd_sync_records(args)
 
     print(f"[{step}] 尚未实现（见 spec/implementation-issues.md）")
     return 1

@@ -202,3 +202,23 @@
   check.py 新增 5 项 JSON 可解析自检（损坏早发现，自检 10/10 → 15/15）
 - 读书队列 12 项全部完成
 - 验证：pipeline.sh 七阶段全绿 / 220 单测 OK / DoD 5/5
+
+
+## 2026-09-05 23:30 团队数据汇集 M1~M3（本日最大特性）
+
+- M1：cli/records.py——sanitize（密钥模式 7 类 + 客户黑名单）、quality_gate（四要素合格线：
+  标题/目标文本、完成态、归属者、证据）、push_shard（按人分片全量重写幂等 + 本地裸仓库
+  学习测试证明双人零冲突）、cmd_export_push（导出复用 + 推送报告 + 交互确认 + 来源档案）
+- M2：GitRecordsAdapter（records/ 分片拼接，受控透传）+ cmd_sync_records（拉取缓存作为
+  发现数据源）+ 数据源卡片"团队记录库"
+- M3：GitHubAdapter + github_issue_to_episode 翻译映射（学习测试钉住：closed→done、
+  verified_at_source、PR 排除、正文截断）+ fetch_issues（分页遍历 + token 走环境变量）
+- score.py 查证器分派：verified_at_source 免 manifest 直采信（GitHub closed / 成员确认），
+  无来源验证仍走 manifest 表查证——轮 4 的"查证器分派"设计在此落地
+- 文档：ADR-0004 待补；README/ADAPTER_CN/ADAPTER_CHOICES 同步新形态
+  （git-records 团队记录库 / github GitHub 任务）
+- 过程：heredoc 转义教训 3 次复现（引号/
+/"），全部按既定纪律用 Write+Edit+chr() 规避；
+  ruff 抓到 2 处（多余 f 前缀、未用导入）已修
+- 验证：ruff 0 违规 / 253 单测 OK（+32）/ DoD 5/5 / 前端 PASS
+- 下一步：ADR-0004 文档化；README 团队汇集章节；扫描器已知位置的 OS 路径实测

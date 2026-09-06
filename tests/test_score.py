@@ -119,3 +119,32 @@ class TestScoreOutDir(unittest.TestCase):
             rc = score.run(argparse.Namespace(episodes=ep_path, manifest=None, out=out))
             self.assertEqual(rc, 0)
             self.assertTrue(os.path.isfile(out))
+
+
+class VerifiedAtSourceDispatchTests(unittest.TestCase):
+    """查证器分派：来源侧已验证（verified_at_source）无需 manifest 即可 join 通过。"""
+
+    def test_verified_at_source_passes_without_manifest(self):
+        from cli import score
+        ep = {
+            "episode_id": "gh-acme-wiki-42", "issue_key": "acme/wiki#42",
+            "title": "调研分页方案", "status": "done",
+            "goal": "对比 offset 与 cursor",
+            "output_signal": True,
+            "business_join_key": {"table": "github_issues", "id": "acme/wiki#42",
+                                  "measured_at": "2026-08-29T12:00:00Z",
+                                  "verified_at_source": True},
+        }
+        result = score.score_episode(ep, manifest_keys=set())  # 空 manifest：无表可查
+        self.assertTrue(result["rules"][0]["pass"])  # join_verifiable
+
+    def test_without_source_verification_manifest_still_required(self):
+        from cli import score
+        ep = {
+            "episode_id": "ep-1", "issue_key": "WIKI-1", "title": "t", "status": "done",
+            "output_signal": True,
+            "business_join_key": {"table": "issue_status_history", "id": "WIKI-1",
+                                  "measured_at": "2026-08-29T12:00:00Z"},
+        }
+        result = score.score_episode(ep, manifest_keys=set())
+        self.assertFalse(result["rules"][0]["pass"])
