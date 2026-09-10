@@ -20,8 +20,8 @@ docs/dod-report.json
 
 # 个人/工具本地文件（不入公开仓库）
 .workbuddy/
-面试准备-SkillTrove项目.md
-SkillTrove从零详解-新手版.md
+面试准备*.md
+*详解*.md
 
 # 成员档案与团队记录缓存（个人敏感，不入库）
 data/member-profile.json
