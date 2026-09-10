@@ -8,6 +8,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -147,6 +148,42 @@ class ShardPushPullTests(unittest.TestCase):
         with open(os.path.join(cache, "records", "episodes-alice.jsonl"), encoding="utf-8") as f:
             rows = [json.loads(line) for line in f if line.strip()]
         self.assertEqual(len(rows), 3)
+
+
+class NoGitIdentityTests(unittest.TestCase):
+    """没有全局 git 身份时也要能推送（CI runner / 新机器）。
+
+    回归钉子：GitHub Actions 的两个 job 都在这条路径上失败过——
+    git commit 报 "Author identity unknown"，push_shard 返回 ok=False，
+    连带 4 个分片测试一起挂。
+    """
+
+    def setUp(self):
+        self.td = tempfile.TemporaryDirectory()
+        self.remote = os.path.join(self.td.name, "team-records.git")
+        subprocess.run(["git", "init", "--bare", "-b", "main", self.remote],
+                       check=True, capture_output=True)
+        self.empty_cfg = os.path.join(self.td.name, "empty-gitconfig")
+        with open(self.empty_cfg, "w", encoding="utf-8") as f:
+            f.write("")
+
+    def tearDown(self):
+        self.td.cleanup()
+
+    def test_push_works_without_git_identity(self):
+        env = {"GIT_CONFIG_GLOBAL": self.empty_cfg, "GIT_CONFIG_SYSTEM": self.empty_cfg}
+        with mock.patch.dict(os.environ, env, clear=False):
+            for k in ("GIT_AUTHOR_NAME", "GIT_AUTHOR_EMAIL",
+                      "GIT_COMMITTER_NAME", "GIT_COMMITTER_EMAIL", "EMAIL"):
+                os.environ.pop(k, None)
+            r = records.push_shard(
+                self.remote, "alice",
+                [{"episode_id": "alice-ep-1", "issue_key": "WIKI-1", "title": "任务 1",
+                  "status": "done", "main_agent": "alice"}],
+                os.path.join(self.td.name, "cache"))
+        self.assertTrue(r["ok"], r["error"])
+        cache = records.pull_records(self.remote, os.path.join(self.td.name, "cache-pull"))
+        self.assertEqual(len(records.load_shards(cache)), 1)
 
 
 if __name__ == "__main__":

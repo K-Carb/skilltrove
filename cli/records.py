@@ -113,6 +113,21 @@ def _git(args: list[str], cwd: str | None = None, check: bool = True) -> subproc
     return subprocess.run(["git"] + args, cwd=cwd, capture_output=True, text=True, check=check)
 
 
+def _has_git_identity(cwd: str) -> bool:
+    """当前环境能否解析出提交身份。
+
+    没有全局/仓库级 user.name+user.email 时（CI runner、新装的机器），
+    git commit 会直接失败并报 "Author identity unknown"。
+    """
+    probe = _git(["var", "GIT_COMMITTER_IDENT"], cwd=cwd, check=False)
+    return probe.returncode == 0
+
+
+def _identity_overrides(member: str) -> list[str]:
+    """提交身份的兜底：用成员名 + 占位邮箱，保证无 git 配置的机器也能提交。"""
+    return ["-c", f"user.name={member}", "-c", "user.email=records@skilltrove.local"]
+
+
 def push_shard(remote: str, member: str, episodes: list[dict], cache_root: str,
                member_id_sha: str = "") -> dict:
     """把成员的 episodes 全量重写进自己的分片并推送到共享仓库。
@@ -137,7 +152,13 @@ def push_shard(remote: str, member: str, episodes: list[dict], cache_root: str,
                 f.write(json.dumps(ep, ensure_ascii=False) + "\n")
         _git(["add", "records"], cwd=cache)
         msg = f"records: {member} sync {len(episodes)} episodes"
-        c = _git(["commit", "-m", msg], cwd=cache, check=False)
+        commit_args = ["commit", "-m", msg]
+        if not _has_git_identity(cache):
+            commit_args = _identity_overrides(member) + commit_args
+        c = _git(commit_args, cwd=cache, check=False)
+        if c.returncode != 0 and "nothing to commit" not in (c.stdout + c.stderr):
+            # 双保险：探测说有身份、提交仍因身份失败（git 版本/配置差异）时换显式身份重试一次
+            c = _git(_identity_overrides(member) + ["commit", "-m", msg], cwd=cache, check=False)
         if c.returncode != 0 and "nothing to commit" not in (c.stdout + c.stderr):
             raise RuntimeError(c.stderr.strip()[:300])
         if c.returncode == 0:
